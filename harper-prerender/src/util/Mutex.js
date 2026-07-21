@@ -27,9 +27,22 @@ export default class Mutex {
 	 */
 	static init() {
 		return new Promise((resolve, _reject) => {
+			// This component runs with THREADS=1 (a single render worker), so a
+			// LOCAL shared buffer is sufficient. Ask the main thread for a shared
+			// one, but fall back to a local buffer if there is no parentPort (loaded
+			// on the main thread) or the main-thread handshake doesn't complete
+			// promptly. Without this fallback a missed `mutex-res` hangs the whole
+			// jsResource load until Harper's 30s timeout → every handler 500s.
+			const useLocal = () => resolve(new Mutex(new SharedArrayBuffer(4)));
+			if (!parentPort) return useLocal();
+
+			const fallback = setTimeout(useLocal, 3000);
+			if (typeof fallback?.unref === 'function') fallback.unref();
+
 			parentPort
 				.on('message', (msg) => {
 					if (msg?.type === 'render_jobs/worker/mutex-res') {
+						clearTimeout(fallback);
 						resolve(new Mutex(msg.sharedBuffer));
 					}
 				})
