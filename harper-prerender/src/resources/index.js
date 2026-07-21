@@ -141,7 +141,7 @@ server.http(
 						return {
 							headers: responseHeaders,
 							status: page.statusCode,
-							wasCacheMiss: page.wasLoadedFromSource(),
+							wasCacheMiss: typeof page.wasLoadedFromSource === 'function' ? page.wasLoadedFromSource() : false,
 						};
 					}
 
@@ -177,7 +177,7 @@ server.http(
 						headers: responseHeaders,
 						status: page.statusCode,
 						body,
-						wasCacheMiss: page.wasLoadedFromSource(),
+						wasCacheMiss: typeof page.wasLoadedFromSource === 'function' ? page.wasLoadedFromSource() : false,
 					};
 				} else {
 					return {
@@ -318,7 +318,7 @@ server.http(
 					headers: responseHeaders,
 					status: 200,
 					body,
-					wasCacheMiss: page.wasLoadedFromSource(),
+					wasCacheMiss: typeof page.wasLoadedFromSource === 'function' ? page.wasLoadedFromSource() : false,
 				};
 			} catch (error) {
 				logger.error(error);
