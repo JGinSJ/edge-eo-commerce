@@ -1,0 +1,163 @@
+# Tracks URLs that should be prerendered and periodically refreshed
+type Sitemap @table(database: "prerender") @sealed @export {
+	# Absolute URL of sitemap
+	url: String @primaryKey
+
+	# Timestamp of the last successful refresh
+	lastRefresh: Date
+
+	# Desired refresh cadence for this URL (duration in milliseconds)
+	refreshInterval: Long
+
+	# Next scheduled time this URL should be refreshed
+	nextRefresh: Date
+
+	# Whether this URL is a sitemap index (vs. a leaf sitemap)
+	isIndex: Boolean
+}
+
+# Metadata for a prerendered page, including scheduling and ownership details
+type PageMeta @table(database: "prerender") @sealed @export {
+	# Combination of {url|deviceType|language} to uniquely identify this page
+	cacheKey: String @primaryKey
+
+	# Absolute URL to prerender
+	url: String!
+
+	# Device type for this page (mobile, desktop, tablet)
+	deviceType: String
+
+	# Current processing state for this page (idle, scheduled, refreshing)
+	status: String @indexed
+
+	# Time of the last refresh in epoch milliseconds
+	lastRefresh: Long
+
+	# Desired refresh cadence for this page (duration in milliseconds)
+	refreshInterval: Long
+
+	# Next scheduled refresh time
+	nextRefresh: Long @indexed
+
+	# Origin sitemap URL that referenced this page
+	sitemapURL: String @indexed
+
+	# Logical node/worker identifier responsible for this page
+	node: String @indexed
+}
+
+# Cache of prerendered static HTML content (and the Markdown derived from it)
+type PageCache @table(database: "prerender") @sealed @export {
+	# Combination of {url|deviceType|language} to uniquely identify this page
+	cacheKey: String @primaryKey
+
+	# Absolute URL to prerender
+	url: String @indexed
+
+	# HTTP status code returned when the content was captured
+	statusCode: Int
+
+	# Serialized HTTP response headers (e.g., JSON string)
+	headers: String
+
+	# Static HTML content (gzip-compressed) — served to humans and SEO crawlers
+	content: Blob
+
+	# Markdown derived from the SAME rendered HTML (gzip-compressed) — served to AI
+	# crawlers. Produced once at render time so a single render yields both
+	# representations under one cache record. Null if derivation failed.
+	markdownContent: Blob
+
+	# Uncompressed length (bytes) of the derived Markdown, for observability
+	markdownLength: Int
+
+	# Device type for this page (mobile, desktop, tablet)
+	deviceType: String
+
+	# Preferred language for this page
+	acceptLanguage: String
+
+	# Time of the last refresh in epoch milliseconds
+	lastRefreshed: Long
+}
+
+# Assignment of nodes to worker IDs for load balancing
+type WorkerAssignments @table(database: "prerender") @sealed @export {
+	# Unique identifier for the assignment record
+	id: Any @primaryKey
+
+	# JSON object mapping nodes to arrays of worker IDs
+	# Example: { "node1": ["worker1", "worker2"], "node2": ["worker3"] }
+	assignments: Any
+}
+
+# NOT REPLICATED
+# Local render job queue used by workers to coordinate rendering tasks
+type RenderJob @table(database: "local") @sealed @export(name: "render_job") {
+	# Unique job identifier
+	id: Any @primaryKey
+
+	# Absolute URL to prerender
+	url: String
+
+	# Device type for this job (mobile, desktop, tablet)
+	deviceType: String
+
+	# Preferred language for this job to prerender page
+	acceptLanguage: String
+
+	# Job state (queued/claimed/completed/failed)
+	status: String @indexed
+
+	# Number of attempts made to process this job
+	attempts: Int
+
+	# Node/worker identifier that has claimed this job
+	claimedBy: String
+
+	# Time the job was claimed in epoch milliseconds
+	claimedAt: Date
+
+	# Relative priority (lower numbers indicate higher priority)
+	priority: Int @indexed
+
+	# Source of the job
+	source: String
+
+	# HTTP status code returned when the content was captured
+	statusCode: Int
+
+	# Serialized HTTP request headers or context associated with the job.
+	headers: String
+
+	# Serialized per-render options (JSON): { waitUntil, settleTimeoutMs,
+	# networkIdleMs, waitForSelector }. Lets a render be tuned per job (e.g. SPAs)
+	# without changing the renderer's global env defaults.
+	renderOptions: String
+
+	# Job creation time in epoch milliseconds
+	createdTime: Date
+
+	# Time job claimed by renderer service worker in epoch milliseconds
+	claimedTime: Date
+
+	# Time job completed by renderer service worker in epoch milliseconds
+	completedTime: Date @indexed
+}
+
+# Status for each local worker process
+type QueueStatus @table(database: "local") @sealed @export(name: "queue_status") {
+	# Unique identifier for the worker process (component uses `producer`)
+	workerId: Any @primaryKey
+
+	# Queue status (empty or queued)
+	status: String
+}
+
+type RenderWorker @table(database: "local") @sealed @export(name: "render_worker") {
+	# Unique identifier for the worker
+	id: Any @primaryKey
+
+	# Worker status (connected or disconnected)
+	status: String!
+}

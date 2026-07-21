@@ -1,0 +1,39 @@
+{
+  "name": "renderer",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "description": "Puppeteer headless browser service renderer for prerendering static HTML pages",
+  "type": "module",
+  "author": {
+    "name": "HarperDB, Inc.",
+    "email": "opensource@harperdb.io",
+    "url": "https://harpersystems.dev/"
+  },
+  "contributors": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HarperDB/template-static-prerender.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HarperDB/template-static-prerender/issues",
+    "email": "opensource@harperdb.io"
+  },
+  "scripts": {
+    "build": "tsc",
+    "install-browser": "puppeteer browsers install chrome-headless-shell --install-deps"
+  },
+  "dependencies": {
+    "denque": "^2.1.0",
+    "dotenv": "^16.4.7",
+    "mqtt": "^5.10.4",
+    "pino": "^9.9.5",
+    "pino-pretty": "^13.1.1",
+    "puppeteer": "^24.7.2",
+    "undici": "^7.15.0"
+  },
+  "devDependencies": {
+    "@puppeteer/browsers": "^2.10.2",
+    "@types/pino": "^7.0.4",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,19 @@
+services:
+  renderer:
+    container_name: "renderer"
+    image: "prerender/renderer"
+    restart: always
+    shm_size: 16gb
+    init: true
+    env_file:
+      - .env
+    environment:
+      HDB_HOST: ${HDB_HOST}
+      HDB_USER: ${HDB_USER}
+      HDB_PASS: ${HDB_PASS}
+      HDB_HTTP_PORT: ${HDB_HTTP_PORT}
+      HDB_MQTT_PORT: ${HDB_MQTT_PORT}
+      WORKER_ID: ${WORKER_ID}
+      NODE_ENV: "production"
+      WAIT_FOR_EVENT: "load"
+      INCOGNITO_PAGES: true

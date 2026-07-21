@@ -1,0 +1,16 @@
+# This provides the HTTP REST interface for all exported resources
+rest: true
+
+# These reads GraphQL schemas to define the schema of database/tables/attributes
+# graphql: true
+graphqlSchema:
+  files: "data/schema.graphql"
+
+# Loads JavaScript modules such that their exports are exported as resources
+jsResource:
+  files: "src/resources/index.js"
+
+# Load orchestrator module
+orchestrator:
+  package: "orchestrator"
+  files: "/"

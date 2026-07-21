@@ -18,19 +18,23 @@ Tags: 👤 = you (cloud/Fabric/Akamai provisioning). 🤖 = Claude can do / has 
 ## Fill-in values (record these as you go)
 | Token | Value |
 |---|---|
-| `<origin-url>` | public URL of `origin/` (S3/Netlify/Vercel) |
-| `<new-node-fqdn>` | Harper node host, e.g. `gq4-<name>.harperfabric.com` |
-| `<new-property-host>` | Akamai property hostname |
+| `<origin-url>` | ✅ `https://stopwaitingshipit.com/` (Linode bucket `edge-eo-ecommerce` @ us-ord-1, fronted by the property) |
+| `<new-node-fqdn>` | Harper node host, e.g. `gq4-<name>.harperfabric.com` — TBD Phase 2 |
+| `<new-property-host>` | ✅ `stopwaitingshipit.com` (existing property, repurposed) |
 | `<new-ew-id>` | new EdgeWorker ID |
 | `<bot-key>` | shared secret = component `BOT_REQUEST_KEY` = `PMUSER_HARPER_BOT_KEY` |
 | Harper user/pass | Basic creds (reads, write-through, renderer, seeding) |
 
 ---
 
-## Phase 1 — CSR commerce origin  🤖 built / 👤 host
-- 🤖 Done: `origin/` (pure-CSR product page; content injected by `app.js`, incl. `<title>`/`<meta>`/JSON-LD).
-- 👤 Host `origin/` at `<origin-url>` (any static host). Must be reachable by Akamai (as origin) AND the renderer VM.
-- Verify: `curl -s <origin-url> | grep -c "Aurora Pro ANC"` → **0** (content not in raw HTML — prerender adds it).
+## Phase 1 — CSR commerce origin  ✅ DONE (verified 2026-07-21)
+- `origin/` (pure-CSR product page; content injected by `app.js`, incl. `<title>`/`<meta>`/JSON-LD).
+- Hosted on **Linode Object Storage**, bucket `edge-eo-ecommerce` (root), region `us-ord-1`.
+  Upload: `s3cmd sync origin/ s3://edge-eo-ecommerce/ --acl-public --guess-mime-type --no-mime-magic`.
+- Fronted by property **stopwaitingshipit.com**:
+  - Origin behavior → Origin Hostname `edge-eo-ecommerce.us-ord-1.linodeobjects.com`, **Forward Host Header = Origin Hostname** (Linode routes bucket by Host), HTTPS 443.
+  - Rule "Default document": Criteria Path matches `/` → behavior **Modify Outgoing Request Path** → Action "Replace entire path" → `/index.html`. (In Phase 5, scope this away from `/_harper/*`.)
+- Verified through the staging edge: `/`→200 text/html serving the CSR shell (0 product text), all assets 200 with correct types. `<origin-url>` = `https://stopwaitingshipit.com/`.
 
 ## Phase 2 — Harper instance + components + tables  👤 provision / 🤖 verify
 1. 👤 New **single-node** Fabric instance. Run params: **`THREADS=1`** (required for on-demand render), `OPERATIONSAPI_NETWORK_PORT=9925`, `HTTP_PORT=9926`, `MQTT_NETWORK_PORT=1883`, `MQTT_WEBSOCKET=true`, `MQTT_REQUIREAUTHENTICATION` on. Create the Harper user.

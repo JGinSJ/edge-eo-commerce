@@ -1,0 +1,35 @@
+{
+  "name": "component",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "description": "Harper component for caching prerendered static HTML pages",
+  "type": "module",
+  "author": {
+    "name": "HarperDB, Inc.",
+    "email": "opensource@harperdb.io",
+    "url": "https://harpersystems.dev/"
+  },
+  "contributors": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HarperDB/template-static-prerender.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HarperDB/template-static-prerender/issues",
+    "email": "opensource@harperdb.io"
+  },
+  "scripts": {
+    "dev": "harperdb dev .",
+    "start": "harperdb run .",
+    "test": "node --test src/util/markdown.test.js"
+  },
+  "dependencies": {
+    "@crawlee/utils": "^3.13.2",
+    "cron": "^4.1.0",
+    "fast-xml-parser": "^5.0.9",
+    "node-html-markdown": "^1.3.0",
+    "node-html-parser": "^7.0.1",
+    "orchestrator": "file:./localExtensions/orchestrator",
+    "sitemapper": "^3.2.20"
+  }
+}
