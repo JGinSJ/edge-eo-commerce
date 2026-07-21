@@ -105,6 +105,16 @@ export class JobQueue extends EventEmitter {
 			[Topic.workerQueue]: { qos: 1 },
 		});
 
+		// Robustness: the upstream `queue_status/producer` MQTT signal can be missed
+		// (e.g. Harper's worker->main thread messaging not delivering on some versions),
+		// which leaves written jobs unclaimed and renders hanging. Poll for jobs on an
+		// interval as well — the HTTP claim path is idempotent (returns [] when nothing
+		// is pending), so this just picks up any job the notification missed.
+		setInterval(() => {
+			jobQueue.jobProducerStatus = 'queued';
+			void jobQueue._tryHydrateBuffer();
+		}, 4000).unref();
+
 		return jobQueue;
 	}
 

@@ -19,7 +19,7 @@ Tags: 👤 = you (cloud/Fabric/Akamai provisioning). 🤖 = Claude can do / has 
 | Token | Value |
 |---|---|
 | `<origin-url>` | ✅ `https://stopwaitingshipit.com/` (Linode bucket `edge-eo-ecommerce` @ us-ord-1, fronted by the property) |
-| `<new-node-fqdn>` | Harper node host, e.g. `gq4-<name>.harperfabric.com` — TBD Phase 2 |
+| `<new-node-fqdn>` | ✅ origin node `us-central1-a-1.commerce-demo.jorge-geronimo-org.harperfabric.com`; cluster URL `https://commerce-demo.jorge-geronimo-org.harperfabric.com` (EW `/_harper` target); Ops API `…:9925` |
 | `<new-property-host>` | ✅ `stopwaitingshipit.com` (existing property, repurposed) |
 | `<new-ew-id>` | new EdgeWorker ID |
 | `<bot-key>` | shared secret = component `BOT_REQUEST_KEY` = `PMUSER_HARPER_BOT_KEY` |
