@@ -149,9 +149,8 @@ export const assignNodeToWorker = mutex.withLock(async (workerId) => {
 		workerNode = bestNode;
 	}
 
-	result.assignments = assignments;
-
-	await result.update();
+	// Harper 5.1.22: .get() records are read-only, so mutate + .update() throws; patch instead.
+	await databases.prerender.WorkerAssignments.patch(0, { assignments });
 
 	return { host: workerNode };
 });

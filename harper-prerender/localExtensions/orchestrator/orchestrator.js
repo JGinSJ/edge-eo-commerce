@@ -263,20 +263,18 @@ async function savePageContent(result) {
 		});
 	}
 
-	// Update scheduling metadata for periodic refresh
+	// Update scheduling metadata for periodic refresh. On Harper 5.1.22 records returned
+	// by .get() are read-only, so mutating them + .update() throws ("Cannot assign to read
+	// only property") — patch the fields instead.
 	const pageSchedule = await databases.prerender.PageMeta.get(cacheKey);
 
 	if (pageSchedule) {
-		pageSchedule.lastRefresh = Date.now();
-
-		if (pageSchedule.refreshInterval > -1) {
-			pageSchedule.nextRefresh = calculateNextRefresh(pageSchedule.refreshInterval, pageSchedule.lastRefresh);
-			pageSchedule.status = 'scheduled';
-		} else {
-			pageSchedule.nextRefresh = -1;
-			pageSchedule.status = 'idle';
-		}
-
-		await pageSchedule.update();
+		const lastRefresh = Date.now();
+		const scheduled = pageSchedule.refreshInterval > -1;
+		await databases.prerender.PageMeta.patch(cacheKey, {
+			lastRefresh,
+			nextRefresh: scheduled ? calculateNextRefresh(pageSchedule.refreshInterval, lastRefresh) : -1,
+			status: scheduled ? 'scheduled' : 'idle',
+		});
 	}
 }
