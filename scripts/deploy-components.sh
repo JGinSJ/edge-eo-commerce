@@ -23,7 +23,7 @@ deploy() {  # $1 = project name (= component dir under repo root)
   echo "→ deploying '$proj' ($(wc -c < "$tgz" | tr -d ' ') bytes)…"
   curl -sS -X POST "$HARPER_OPS_URL" \
     -H "Authorization: Basic $AUTH" -H 'Content-Type: application/json' \
-    -d "{\"operation\":\"deploy_component\",\"project\":\"$proj\",\"replace\":true,\"restart\":true,\"payload\":\"$payload\"}"
+    -d "{\"operation\":\"deploy_component\",\"project\":\"$proj\",\"replace\":true,\"restart\":true,\"ignore_replication_errors\":true,\"payload\":\"$payload\"}"
   echo; rm -f "$tgz"
 }
 
