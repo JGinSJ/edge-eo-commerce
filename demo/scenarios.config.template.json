@@ -1,0 +1,50 @@
+{
+  "_notes": "Copy over demo/scenarios.config.json in the demo checkout. Replace <new-property-host>. For Standard-TLS properties use .edgesuite-staging.net instead of .edgekey-staging.net.",
+  "default": "prerender",
+  "scenarios": [
+    {
+      "id": "cdn-cache",
+      "label": "CDN Cache",
+      "blurb": "Convert HTML→Markdown at the edge; Akamai CDN caches the result.",
+      "source": "https://<new-property-host>/",
+      "host": "<new-property-host>",
+      "stagingHost": "<new-property-host>.edgekey-staging.net",
+      "ewScenario": "cdn-cache",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "features": { "harperCache": false, "renderLab": false, "perCrawler": false, "writeThrough": false }
+    },
+    {
+      "id": "md-cache",
+      "label": "MD Cache (write-through)",
+      "blurb": "First AI crawler converts + writes Harper; return visits served from Harper.",
+      "source": "https://<new-property-host>/",
+      "host": "<new-property-host>",
+      "stagingHost": "<new-property-host>.edgekey-staging.net",
+      "ewScenario": "md-cache",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "features": { "harperCache": true, "renderLab": false, "perCrawler": false, "writeThrough": true }
+    },
+    {
+      "id": "convert-cache",
+      "label": "Convert Cache",
+      "blurb": "Harper self-populates Markdown from prerendered HTML; Fermyon is fallback.",
+      "source": "https://<new-property-host>/",
+      "host": "<new-property-host>",
+      "stagingHost": "<new-property-host>.edgekey-staging.net",
+      "ewScenario": "convert-cache",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "features": { "harperCache": true, "renderLab": false, "perCrawler": false, "writeThrough": false }
+    },
+    {
+      "id": "prerender",
+      "label": "Prerender (HTML + MD)",
+      "blurb": "Headless render → HTML for search crawlers, Markdown for AI crawlers, per-crawler.",
+      "source": "https://<new-property-host>/",
+      "host": "<new-property-host>",
+      "stagingHost": "<new-property-host>.edgekey-staging.net",
+      "ewScenario": "prerender",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "features": { "harperCache": true, "renderLab": true, "perCrawler": true, "writeThrough": false }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# OS
+.DS_Store
+
+# Node
+node_modules/
+
+# Real env files — only *.env.example templates are tracked
+.env
+*.env
+!*.env.example
+
+# NOTE: edgeworker-bundle/bundle.tgz IS tracked on purpose — this repo exists to
+# carry the built EdgeWorker bundle so it can be uploaded to the new EW.

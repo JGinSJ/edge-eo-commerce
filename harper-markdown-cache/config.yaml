@@ -1,0 +1,7 @@
+# Minimal Harper component that DECLARES the markdown_cache table for the
+# md-cache write-through scenario. Deploy it the same way as harper-prerender
+# (Operations API deploy_component / Studio git deploy). Harper auto-creates the
+# table + REST endpoint on deploy — nothing hand-built at the DB level.
+rest: true
+graphqlSchema:
+  files: data/schema.graphql

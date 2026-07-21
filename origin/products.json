@@ -1,0 +1,41 @@
+{
+  "id": "aur-pro-anc",
+  "sku": "AUR-PRO-ANC-BLK",
+  "brand": "Aurora Audio",
+  "name": "Aurora Pro ANC Wireless Headphones",
+  "category": "Headphones",
+  "price": 349.0,
+  "currency": "USD",
+  "availability": "InStock",
+  "rating": 4.7,
+  "reviewCount": 2148,
+  "shortDescription": "Reference-grade active noise cancellation, 40-hour battery, and adaptive spatial audio in a featherweight aluminum frame.",
+  "description": "The Aurora Pro ANC delivers studio-reference sound with adaptive, scene-aware noise cancellation that reads your environment 50,000 times a second. A recycled-aluminum frame keeps weight to 248g, while memory-foam earcups stay comfortable through the full 40-hour battery. Multipoint Bluetooth 5.4 pairs two devices at once, and a 5-minute quick charge returns 6 hours of playback.",
+  "highlights": [
+    "Adaptive scene-aware ANC (up to -42 dB)",
+    "40-hour battery; 5-min charge = 6 hours",
+    "Bluetooth 5.4 multipoint, LDAC + aptX Lossless",
+    "Adaptive spatial audio with head tracking",
+    "248g recycled-aluminum frame"
+  ],
+  "specs": [
+    ["Driver", "40mm dynamic, beryllium-coated"],
+    ["Frequency response", "4 Hz – 40 kHz"],
+    ["Battery life", "40 h (ANC on), 60 h (ANC off)"],
+    ["Bluetooth", "5.4, multipoint (2 devices)"],
+    ["Codecs", "LDAC, aptX Lossless, AAC, SBC"],
+    ["Weight", "248 g"],
+    ["Charging", "USB-C, 5-min = 6 h"],
+    ["Warranty", "2 years"]
+  ],
+  "images": [
+    { "alt": "Aurora Pro ANC in midnight black, three-quarter view", "tone": "#1b2430" },
+    { "alt": "Earcup detail showing memory-foam cushion", "tone": "#2a3646" },
+    { "alt": "Folded travel position in case", "tone": "#3a4a5e" }
+  ],
+  "reviews": [
+    { "author": "Priya M.", "rating": 5, "title": "Best ANC I've used", "body": "Cancels the plane engine drone completely. Battery genuinely lasts a full week of commuting." },
+    { "author": "Dev R.", "rating": 5, "title": "Lossless is real", "body": "aptX Lossless over my phone is a noticeable step up. Multipoint between laptop and phone just works." },
+    { "author": "Sam K.", "rating": 4, "title": "Great, slightly clampy", "body": "Sound and ANC are top tier. Clamp force loosened after a week of use." }
+  ]
+}

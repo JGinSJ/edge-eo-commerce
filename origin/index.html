@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- NOTE: title/description/structured-data are intentionally generic here and
+       are filled in by app.js AFTER client-side render. A crawler that does not
+       execute JS sees only this shell — which is the whole point of prerendering. -->
+  <title>Loading… | Aurora Audio</title>
+  <meta name="description" content="">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Aurora&nbsp;Audio</a>
+    <nav class="site-nav"><a href="/">Shop</a><a href="/">Support</a></nav>
+  </header>
+
+  <!-- app root: empty until the client-side app renders into it -->
+  <main id="app" aria-busy="true">
+    <div class="skeleton" role="status" aria-live="polite">
+      <div class="spinner"></div>
+      <p>Loading product…</p>
+    </div>
+  </main>
+
+  <noscript>
+    <p style="padding:2rem;text-align:center">
+      This store requires JavaScript to display product details.
+    </p>
+  </noscript>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>

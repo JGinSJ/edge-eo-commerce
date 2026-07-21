@@ -1,0 +1,14 @@
+# The md-cache scenario is a plain key/value markdown store:
+#   EW  reads  GET  /markdown_cache/<urlToKey(url)>   -> record.markdown
+#   conv writes PUT  /markdown_cache/<urlToKey(url)>   body { url, markdown, cached_at, content_type }
+#
+# The URL path segment becomes the primary key (`id`). NOT @sealed, so the
+# converter's snake_case body attributes are stored as-is. @export(name:"markdown_cache")
+# makes the REST path exactly /markdown_cache.
+type MarkdownCache @table(database: "cache") @export(name: "markdown_cache") {
+	id: String @primaryKey
+	url: String
+	markdown: String
+	cached_at: String
+	content_type: String
+}
