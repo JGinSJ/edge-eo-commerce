@@ -51,6 +51,7 @@ server.http(
 
 			// Validate bot request secret key
 			if (BOT_REQUEST_KEY_NAME && requestHeaders.get(BOT_REQUEST_KEY_NAME) !== BOT_REQUEST_KEY) {
+				logger.warn('DEBUG /page bot-key reject', { name: BOT_REQUEST_KEY_NAME, got: JSON.stringify(requestHeaders.get(BOT_REQUEST_KEY_NAME)), expected: BOT_REQUEST_KEY });
 				return {
 					headers: new Headers(),
 					status: 401,
@@ -223,6 +224,7 @@ server.http(
 
 			// Validate bot request secret key (same gate as /page)
 			if (BOT_REQUEST_KEY_NAME && requestHeaders.get(BOT_REQUEST_KEY_NAME) !== BOT_REQUEST_KEY) {
+				logger.warn('DEBUG /page_content bot-key reject', { name: BOT_REQUEST_KEY_NAME, got: JSON.stringify(requestHeaders.get(BOT_REQUEST_KEY_NAME)), expected: BOT_REQUEST_KEY });
 				return { headers: new Headers(), status: 401 };
 			}
 
