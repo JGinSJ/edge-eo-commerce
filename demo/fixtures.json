@@ -1,0 +1,24 @@
+{
+  "customers": [
+    {
+      "name": "Sample pages (neutral — no third-party content)",
+      "pages": [
+        {
+          "label": "Helios SaaS landing (offline sample)",
+          "url": "https://www.djangoproject.com/",
+          "file": "sample-saas-landing.html"
+        },
+        {
+          "label": "Django home (live)",
+          "url": "https://www.djangoproject.com/",
+          "file": null
+        },
+        {
+          "label": "Django weblog (live)",
+          "url": "https://www.djangoproject.com/weblog/",
+          "file": null
+        }
+      ]
+    }
+  ]
+}

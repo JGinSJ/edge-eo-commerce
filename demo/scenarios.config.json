@@ -1,0 +1,63 @@
+{
+  "default": "prerender",
+  "scenarios": [
+    {
+      "id": "prerender",
+      "label": "Prerender + Per-Crawler",
+      "blurb": "Headless render → HTML for search crawlers, Markdown for AI crawlers, per-crawler from one cached render. Powers the \"Who's asking?\" view.",
+      "source": "harper-prerender-html-md",
+      "host": "stopwaitingshipit.com",
+      "ewScenario": "prerender",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "edgeIp": "",
+      "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
+      "features": { "harperCache": true, "renderLab": true, "perCrawler": true, "writeThrough": false, "needsPrerender": true }
+    },
+    {
+      "id": "convert-cache",
+      "label": "Convert + Cache",
+      "blurb": "Harper self-populates Markdown from the prerendered HTML; Akamai Functions is the fallback converter.",
+      "source": "harper-cache-md-fermyon-fallback",
+      "host": "stopwaitingshipit.com",
+      "ewScenario": "convert-cache",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "edgeIp": "",
+      "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
+      "features": { "harperCache": true, "renderLab": false, "perCrawler": false, "writeThrough": false, "needsPrerender": true }
+    },
+    {
+      "id": "md-cache",
+      "label": "Write-through MD Cache",
+      "blurb": "First AI crawler converts via Akamai Functions and writes through to Harper; returning bots are served from Harper cache.",
+      "source": "harper-cache-pipeline",
+      "host": "stopwaitingshipit.com",
+      "ewScenario": "md-cache",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "edgeIp": "",
+      "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
+      "live": false,
+      "blockedReason": "Needs the DNS cutover — the edge converter can't reach the real origin until stopwaitingshipit.com points at Akamai.",
+      "features": { "harperCache": true, "renderLab": false, "perCrawler": false, "writeThrough": true }
+    },
+    {
+      "id": "cdn-cache",
+      "label": "Edge Convert + CDN Cache",
+      "blurb": "Akamai Functions converts HTML→Markdown at the edge; the CDN caches the result; no Harper.",
+      "source": "edge-ai-markdown",
+      "host": "stopwaitingshipit.com",
+      "ewScenario": "cdn-cache",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "edgeIp": "",
+      "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
+      "live": false,
+      "blockedReason": "Needs the DNS cutover — the edge converter can't reach the real origin until stopwaitingshipit.com points at Akamai.",
+      "features": { "harperCache": false, "renderLab": false, "perCrawler": false, "writeThrough": false }
+    }
+  ],
+  "_notes": {
+    "collapsed": "All scenarios target ONE property (stopwaitingshipit.com) — the commerce clean-room deployment. The unified EdgeWorker selects the scenario per request from the X-Demo-Scenario header (= ewScenario), enabled by PMUSER_DEMO_MODE=true. One EW, one property. The 'Who's asking?' hero uses the prerender scenario and varies only the crawler.",
+    "status": "prerender + convert-cache verified live through the staging edge (harper-cache-html / harper-cache-md). md-cache + cdn-cache are blocked on DNS cutover (the edge converter can't reach the real origin until stopwaitingshipit.com DNS points at Akamai).",
+    "ewScenario": "Sent as the X-Demo-Scenario header; maps to the EdgeWorker's demo-mode preset (cdn-cache | md-cache | convert-cache | prerender).",
+    "run": "Staging demo: AKAMAI_STAGING=1 HARPER_PREVIEW_URL=<harper-cluster-url> HARPER_BOT_KEY=eeo-commerce-demo npm start"
+  }
+}

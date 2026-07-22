@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Helios Analytics — Real-time Customer Intelligence Platform</title>
+<meta name="description" content="Helios Analytics unifies product, marketing, and revenue data into one real-time platform. Self-authored sample page for the demo." />
+<link rel="preconnect" href="https://fonts.example.net" />
+<style>
+  :root{--brand:#1e40af;--ink:#0f172a;--muted:#64748b;--bg:#f8fafc}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  .container{max-width:1120px;margin:0 auto;padding:0 24px}
+  header.site{position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border-bottom:1px solid #e2e8f0;z-index:10}
+  header.site .container{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{font-weight:800;font-size:20px;color:var(--brand);letter-spacing:-.02em}
+  nav.primary ul{display:flex;gap:28px;list-style:none}
+  nav.primary a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:600}
+  nav.primary a:hover{color:var(--ink)}
+  .btn{display:inline-block;padding:10px 18px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-ghost{border:1px solid #cbd5e1;color:var(--ink)}
+  .hero{padding:96px 0 72px;background:linear-gradient(180deg,#eef2ff,#fff)}
+  .hero h1{font-size:48px;line-height:1.1;letter-spacing:-.03em;max-width:760px}
+  .hero p.lede{font-size:20px;color:var(--muted);max-width:620px;margin:20px 0 32px}
+  .hero .cta{display:flex;gap:14px}
+  .logos{display:flex;gap:40px;align-items:center;opacity:.6;margin-top:56px;flex-wrap:wrap}
+  .logos span{font-weight:700;color:var(--muted)}
+  section.features{padding:88px 0}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+  .card{padding:28px;border:1px solid #e2e8f0;border-radius:14px;background:var(--bg)}
+  .card h3{font-size:18px;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:15px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:64px 0;text-align:center}
+  .stat .n{font-size:40px;font-weight:800;color:var(--brand)}
+  .stat .l{color:var(--muted);font-size:14px}
+  blockquote.quote{font-size:24px;line-height:1.4;max-width:760px;margin:0 auto;text-align:center;font-weight:600}
+  .quote cite{display:block;margin-top:20px;font-size:14px;color:var(--muted);font-style:normal}
+  footer.site{background:var(--ink);color:#cbd5e1;padding:56px 0;margin-top:80px}
+  footer.site .grid{grid-template-columns:2fr 1fr 1fr 1fr}
+  footer.site a{color:#cbd5e1;text-decoration:none;font-size:14px;display:block;margin:6px 0}
+  footer.site h4{color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="container">
+    <div class="logo">Helios Analytics</div>
+    <nav class="primary" aria-label="Primary">
+      <ul>
+        <li><a href="/platform">Platform</a></li>
+        <li><a href="/solutions">Solutions</a></li>
+        <li><a href="/pricing">Pricing</a></li>
+        <li><a href="/customers">Customers</a></li>
+        <li><a href="/docs">Docs</a></li>
+      </ul>
+    </nav>
+    <div><a class="btn btn-ghost" href="/login">Sign in</a> <a class="btn btn-primary" href="/trial">Start free trial</a></div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <h1>Real-time customer intelligence for every team</h1>
+      <p class="lede">Helios unifies product, marketing, and revenue data into one streaming platform — so your teams act on what customers do the moment they do it.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="/trial">Start free trial</a>
+        <a class="btn btn-ghost" href="/demo">Book a demo</a>
+      </div>
+      <div class="logos">
+        <span>Northwind</span><span>Globex</span><span>Initech</span><span>Umbra</span><span>Soylent</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="container">
+      <div class="grid">
+        <article class="card"><h3>Streaming pipelines</h3><p>Ingest billions of events per day with sub-second latency and exactly-once delivery guarantees.</p></article>
+        <article class="card"><h3>Unified profiles</h3><p>Stitch identities across web, mobile, and backend into a single real-time customer view.</p></article>
+        <article class="card"><h3>Composable models</h3><p>Define metrics once and reuse them across dashboards, alerts, and reverse-ETL syncs.</p></article>
+        <article class="card"><h3>Governed access</h3><p>Row- and column-level policies keep regulated data compliant without slowing teams down.</p></article>
+        <article class="card"><h3>Warehouse-native</h3><p>Runs directly on your warehouse — no copies, no lock-in, no shadow data estate.</p></article>
+        <article class="card"><h3>Open APIs</h3><p>Every capability is available through a documented REST and streaming API.</p></article>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="n">8B+</div><div class="l">events / day</div></div>
+        <div class="stat"><div class="n">280ms</div><div class="l">p99 latency</div></div>
+        <div class="stat"><div class="n">99.99%</div><div class="l">uptime SLA</div></div>
+        <div class="stat"><div class="n">40+</div><div class="l">native connectors</div></div>
+      </div>
+      <blockquote class="quote">"Helios cut our time-to-insight from days to seconds. It's the backbone of how we operate."<cite>— VP Data, a fictional company</cite></blockquote>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="container">
+    <div class="grid">
+      <div><div class="logo" style="color:#fff">Helios Analytics</div><p style="color:#94a3b8;font-size:14px;margin-top:8px">Real-time customer intelligence. This is a self-authored sample page used by the demo — no real company or data.</p></div>
+      <div><h4>Product</h4><a href="/platform">Platform</a><a href="/pricing">Pricing</a><a href="/security">Security</a></div>
+      <div><h4>Company</h4><a href="/about">About</a><a href="/careers">Careers</a><a href="/contact">Contact</a></div>
+      <div><h4>Resources</h4><a href="/docs">Docs</a><a href="/blog">Blog</a><a href="/status">Status</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Sample analytics stub — illustrative bloat, does nothing.
+  (function(){var q=[];window.helios=function(){q.push(arguments)};
+   window.helios('init','demo');window.helios('page',{path:location.pathname});
+   document.addEventListener('click',function(e){if(e.target.closest('a'))window.helios('nav',{href:e.target.closest('a').getAttribute('href')})});
+  })();
+</script>
+</body>
+</html>
