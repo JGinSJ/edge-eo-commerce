@@ -31,7 +31,9 @@ const BOT_PATH_PREFIX = '/page/';
 // Harper markdown-prerender contract (GET /page_content?path=<url>).
 const MD_PATH_PREFIX = '/page_content';
 const BOT_REQUEST_KEY_NAME = process.env.BOT_REQUEST_KEY_NAME || 'x-pr-req-key';
-const BOT_REQUEST_KEY = process.env.BOT_REQUEST_KEY || '';
+// Demo default so the EdgeWorker's x-pr-req-key gate has a matching value without
+// per-instance env config on Fabric. Override with the BOT_REQUEST_KEY env in prod.
+const BOT_REQUEST_KEY = process.env.BOT_REQUEST_KEY || 'eeo-commerce-demo';
 
 const VALID_DEVICE_TYPES = ['desktop', 'mobile', 'tablet'];
 
