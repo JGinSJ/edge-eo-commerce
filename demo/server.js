@@ -276,6 +276,31 @@ async function runTests(targetUrl, fixtureFile, cfg = null) {
         'Pragma': 'akamai-x-cache-on'
     };
 
+    // Cold→warm mode (convert-cache): show a genuine first crawler served LIVE by the
+    // edge fallback converter (B — not from Harper), then prerender into Harper and serve
+    // the return visit from harper-cache-md (C). Flush first so B is reliably cold every
+    // run. Needs Harper creds; falls through to the normal path without them.
+    const coldThenWarm = !!(cfg && cfg.features && cfg.features.coldThenWarm) && HARPER_READY;
+    if (coldThenWarm) {
+        await harperCacheClear({ url: targetUrl }).catch(() => {});       // ensure B is cold
+        // Post-flush settle: the fallback converter's first cold connection to origin can
+        // throw a transient TLS error (HTTP 500, empty body). A brief wait plus one retry
+        // gives a clean live conversion for the first crawler.
+        await new Promise((r) => setTimeout(r, 1500));
+        const [testA, tokenData] = await Promise.all([
+            makeEdgeRequest(targetUrl, {}, cfg),
+            tokenPromise
+        ]);
+        let testB = await makeEdgeRequest(targetUrl, botHeaders, cfg);    // cold → fermyon-fallback (live convert)
+        if (testB.status >= 500 || !/markdown|html/i.test(testB.contentType || '')) {
+            await new Promise((r) => setTimeout(r, 1500));
+            testB = await makeEdgeRequest(targetUrl, botHeaders, cfg);
+        }
+        await seedAndAwaitPrerender(targetUrl).catch(() => {});           // prerender fills Harper
+        const testC = await makeEdgeRequest(targetUrl, botHeaders, cfg);  // → harper-cache-md
+        return { testA, testB, testC, tokenData, scenario: cfg.id, coldThenWarm: true };
+    }
+
     const [testA, tokenData] = await Promise.all([
         makeEdgeRequest(targetUrl, {}, cfg),
         tokenPromise
@@ -1336,7 +1361,11 @@ function runPipeline() {
   // rendered into Harper. If this URL isn't cached yet, prerender it FIRST so the
   // return visit (Scenario C) hits the cache instead of racing a miss and talk-tracking.
   // Needs Harper creds; degrades gracefully (proceeds to the run) if unavailable.
-  var needsSeed = heroHarperReady && scenarioFeatures && scenarioFeatures.needsPrerender;
+  // coldThenWarm scenarios (convert-cache) deliberately skip the pre-seed: the server
+  // flushes and runs a cold first visit, then prerenders between B and C, so B shows a
+  // genuine live-at-the-edge conversion instead of a pre-warmed cache hit.
+  var needsSeed = heroHarperReady && scenarioFeatures && scenarioFeatures.needsPrerender
+                  && !scenarioFeatures.coldThenWarm;
   var prep;
   if (needsSeed) {
     msgEl.textContent = 'Checking Harper for a prerender of this page…';
@@ -1400,8 +1429,8 @@ function pollPrerendered(url, tries) {
 
 function renderResults(d) {
   renderCard('body-a', d.testA, 'a', null, d.tokenData);
-  renderCard('body-b', d.testB, 'b', d.testA.bodySize, d.tokenData);
-  renderCard('body-c', d.testC, 'c', d.testA.bodySize, d.tokenData);
+  renderCard('body-b', d.testB, 'b', d.testA.bodySize, d.tokenData, d.coldThenWarm);
+  renderCard('body-c', d.testC, 'c', d.testA.bodySize, d.tokenData, d.coldThenWarm);
 
   var bMarkdown = d.testB.contentType.includes('markdown');
   var cMarkdown = d.testC.contentType.includes('markdown');
@@ -1460,7 +1489,7 @@ function renderResults(d) {
   show('results');
 }
 
-function renderCard(id, t, scenario, htmlSize, tokenData) {
+function renderCard(id, t, scenario, htmlSize, tokenData, coldWarm) {
   var isMarkdown = t.contentType.includes('markdown');
   // The unified EdgeWorker emits harper-cache-md / harper-cache-html on a Harper hit.
   var harperHit = /^harper-cache/.test((t.xServedBy || '').toLowerCase());
@@ -1475,7 +1504,8 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
     edgeRow = statRow('Edge Processing', badge('Origin passthrough', 'b-bypass'));
   } else if (scenario === 'b') {
     edgeRow = statRow('Edge Processing',
-      harperHit          ? badge('Served from cache', 'b-hit')
+      coldWarm           ? badge('Converted live at the edge', 'b-miss')
+      : harperHit        ? badge('Served from cache', 'b-hit')
       : t.xWasmExecution ? badge('Markdown conversion + cached', 'b-miss')
       :                    badge('Not Confirmed', 'b-miss'));
   } else if (scenario === 'c') {
@@ -1547,15 +1577,30 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
       ? statRow('Cache Write', badge(t.xCacheWrite, t.xCacheWrite === 'ok' ? 'b-ok' : 'b-err'))
       : '';
     document.getElementById(id).innerHTML =
-      statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
       statRow('Content Format', ctBadge(t.contentType, scenario)) +
       statRow('Cache Status',   cacheBadge(t, scenario)) +
       edgeRow +
       statRow('Served by', servedByBadge(t, scenario)) +
       writeRow +
       statRow('Response Size',  sizeStr) +
+      statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
       preview;
     return;
+  }
+
+  // Cold→warm (convert-cache): B is served live at the edge (not in Harper yet), C from
+  // Harper. Override B's Cache Status and add a note connecting the two visits.
+  var cacheStat = (coldWarm && scenario === 'b')
+    ? badge('Not in Harper yet \\u00b7 live convert', 'b-miss')
+    : cacheBadge(t, scenario);
+  var coldNote = '';
+  if (coldWarm && scenario === 'b') {
+    coldNote = '<div style="font-size:11px;color:#a8a8aa;line-height:1.4;padding:2px 0 6px">' +
+      'First crawler &mdash; the page isn&rsquo;t prerendered yet, so Akamai Functions converts it live at the edge. ' +
+      'The return visit below is served from Harper cache.</div>';
+  } else if (coldWarm && scenario === 'c') {
+    coldNote = '<div style="font-size:11px;color:#a8a8aa;line-height:1.4;padding:2px 0 6px">' +
+      'Now prerendered into Harper &mdash; the return crawler is served straight from the Markdown cache.</div>';
   }
 
   // Scenario C, prerender on a MISS: show the talk-track note instead of cache-state
@@ -1573,17 +1618,18 @@ function renderCard(id, t, scenario, htmlSize, tokenData) {
       '</div>';
   } else {
     cacheBlock =
-      statRow('Cache Status',   cacheBadge(t, scenario)) +
+      statRow('Cache Status',   cacheStat) +
       edgeRow +
-      statRow('Served by', servedByBadge(t, scenario));
+      statRow('Served by', servedByBadge(t, scenario)) +
+      coldNote;
   }
 
   document.getElementById(id).innerHTML =
-    statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
-    rtCaveat +
     statRow('Content Format', ctBadge(t.contentType, scenario)) +
     cacheBlock +
     statRow('Response Size',  sizeStr) +
+    statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
+    rtCaveat +
     preview;
 }
 
@@ -1814,6 +1860,24 @@ function harperSeed(targetUrl) {
         req.setTimeout(30000, () => req.destroy());
         req.end(payload);
     });
+}
+
+// Cold→warm helper (convert-cache walkthrough): seed the prerender, then poll Harper
+// until BOTH the HTML and Markdown representations have landed (the headless render
+// completed) or capMs elapses. Lets the return visit (C) be served from harper-cache-md
+// after the first visit (B) was served live at the edge by the fallback converter.
+async function seedAndAwaitPrerender(targetUrl, capMs = 45000) {
+    await harperSeed(targetUrl);
+    const deadline = Date.now() + capMs;
+    while (Date.now() < deadline) {
+        const [html, md] = await Promise.all([
+            harperReadRepresentation(targetUrl, 'html', 'desktop'),
+            harperReadRepresentation(targetUrl, 'markdown', 'desktop'),
+        ]);
+        if (html.status === 200 && md.status === 200) return true;
+        await new Promise((r) => setTimeout(r, 2000));
+    }
+    return false;
 }
 
 // Call Harper's /render_preview with the chosen options (server-side so the

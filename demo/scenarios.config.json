@@ -11,7 +11,7 @@
       "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
       "edgeIp": "",
       "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
-      "features": { "harperCache": true, "renderLab": false, "perCrawler": false, "writeThrough": false, "needsPrerender": true }
+      "features": { "harperCache": true, "renderLab": false, "perCrawler": false, "writeThrough": false, "needsPrerender": true, "coldThenWarm": true }
     },
     {
       "id": "prerender",
