@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to take a screenshot on your Northwind phone | Northwind Mobile Support</title>
+  <meta name="description" content="Step-by-step instructions to capture, find, edit, and share a screenshot on your Northwind phone.">
+  <link rel="canonical" href="https://support.northwindmobile.example/articles/take-a-screenshot">
+  <!-- NOTE: fictional brand "Northwind Mobile" — deliberately fat sample content for the skinny/prioritized-HTML spike. -->
+  <style>
+    :root{--nw-blue:#0b2e6e;--nw-accent:#00a3e0}
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;line-height:1.5}
+    a{color:var(--nw-blue);text-decoration:none}a:hover{text-decoration:underline}
+    .container{max-width:1200px;margin:0 auto;padding:0 20px}
+    .util-bar{background:#f2f4f7;font-size:12px;color:#555}
+    .util-bar ul{display:flex;gap:16px;list-style:none;margin:0;padding:8px 0;flex-wrap:wrap}
+    header.site{background:var(--nw-blue);color:#fff}
+    .site-top{display:flex;align-items:center;gap:24px;padding:14px 0}
+    .brand{font-weight:800;font-size:22px;color:#fff;letter-spacing:.5px}
+    nav.mega>ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+    nav.mega>ul>li>a{color:#fff;font-weight:600;font-size:14px}
+    .panel{background:#0a2559;border-top:1px solid #ffffff22}
+    .panel .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:18px 0}
+    .panel h4{color:#9fd4f5;font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
+    .panel ul{list-style:none;margin:0;padding:0;line-height:2}
+    .panel a{color:#dbe7ff;font-size:13px}
+    .subnav{background:#08205090}
+    .subnav ul{display:flex;gap:16px;list-style:none;margin:0;padding:10px 0;flex-wrap:wrap}
+    .subnav a{color:#dbe7ff;font-size:13px}
+    .hero-promo{background:linear-gradient(120deg,#00a3e0,#0b2e6e);color:#fff;padding:26px 0}
+    .hero-promo h2{margin:0 0 6px}
+    .promo{background:#fff3cd;color:#664d03;text-align:center;padding:12px}
+    .topics{padding:26px 0;background:#f8fafc}
+    .topics h2{margin:0 0 14px;font-size:16px;color:#334}
+    .topic-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .topic-tile{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px}
+    .devices{padding:26px 0}
+    .device-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .device-card{border:1px solid #e2e8f0;border-radius:12px;padding:14px}
+    .device-card h3{margin:0 0 6px;font-size:15px}
+    .device-card p{margin:0;font-size:12px;color:#667}
+    .crumbs{font-size:13px;color:#667;padding:16px 0}
+    main{padding:8px 0 40px}
+    article h1{font-size:30px;margin:6px 0 10px}
+    .byline{color:#667;font-size:13px;margin-bottom:18px}
+    .intro{color:#333;font-size:15px}
+    .toc{background:#f7f9fc;border:1px solid #e6ecf5;border-radius:10px;padding:14px 18px;margin:18px 0}
+    .toc ul{margin:8px 0 0 18px}
+    .answer{background:#f7fbff;border:1px solid #d6e9fb;border-left:4px solid var(--nw-accent);border-radius:10px;padding:18px 20px;margin:18px 0}
+    .answer ol{margin:10px 0 0 18px;line-height:1.7}
+    .device-tabs{display:flex;gap:8px;margin:16px 0}
+    .device-tabs span{border:1px solid #cbd5e1;border-radius:999px;padding:6px 14px;font-size:13px}
+    .feedback{border-top:1px solid #e2e8f0;margin-top:30px;padding-top:18px;color:#556}
+    .community{background:#eef5ff;padding:24px 0}
+    .newsletter{background:#0a1a3a;color:#fff;padding:26px 0}
+    .newsletter input{padding:10px 12px;border-radius:8px;border:0;min-width:260px}
+    .related{padding:24px 0;background:#f8fafc}
+    .related ul{columns:3;list-style:none;padding:0}
+    footer.site{background:#0a1a3a;color:#c8d2e6;font-size:13px;padding:34px 0 20px}
+    footer .cols{display:grid;grid-template-columns:repeat(6,1fr);gap:18px}
+    footer h4{color:#fff;font-size:13px;margin:0 0 10px}
+    footer ul{list-style:none;padding:0;margin:0;line-height:1.9}
+    footer a{color:#c8d2e6}
+    .legal{border-top:1px solid #22345c;margin-top:22px;padding-top:16px;color:#8b98b5;font-size:12px}
+    .cookie{background:#111;color:#eee;font-size:12px;padding:12px 0}
+  </style>
+  <script>/* analytics bootstrap (stripped by skinnify) */ window.nwDataLayer=window.nwDataLayer||[];function nwTrack(){nwDataLayer.push(arguments)}nwTrack('pageview',{section:'support',article:'take-a-screenshot'});</script>
+  <script>/* consent manager stub */ window.__consent={ads:true,analytics:true,functional:true};</script>
+</head>
+<body>
+
+<!-- ===================== CHROME: utility bar ===================== -->
+<div class="util-bar"><div class="container"><ul>
+  <li><a href="/">Personal</a></li><li><a href="/business">Business</a></li>
+  <li><a href="/prepaid">Prepaid</a></li><li><a href="/enterprise">Enterprise</a></li>
+  <li><a href="/government">Government</a></li><li><a href="/first-responders">First responders</a></li>
+  <li><a href="/military">Military &amp; veterans</a></li><li><a href="/students">Students</a></li>
+  <li><a href="/stores">Find a store</a></li><li><a href="/coverage">Coverage map</a></li>
+  <li><a href="/en">EN</a></li><li><a href="/es">ES</a></li>
+  <li><a href="/account">My account</a></li><li><a href="/cart">Cart</a></li>
+  <li><a href="/support">Support</a></li><li><a href="/contact">Contact us</a></li>
+</ul></div></div>
+
+<!-- ===================== CHROME: primary nav + full mega-menu panels ===================== -->
+<header class="site">
+  <div class="container site-top">
+    <span class="brand">NORTHWIND<span style="color:var(--nw-accent)">·</span>MOBILE</span>
+    <nav class="mega"><ul>
+      <li><a href="/plans">Plans</a></li>
+      <li><a href="/phones">Phones</a></li>
+      <li><a href="/deals">Deals</a></li>
+      <li><a href="/internet">Home Internet</a></li>
+      <li><a href="/watches">Watches &amp; Tablets</a></li>
+      <li><a href="/accessories">Accessories</a></li>
+      <li><a href="/business">Business</a></li>
+      <li><a href="/support">Support</a></li>
+    </ul></nav>
+  </div>
+
+  <!-- These dropdown panels ship in the DOM even though a person only sees one on hover.
+       A bot reads every one of them before it reaches the article. -->
+  <div class="panel"><div class="container"><div class="cols">
+    <div><h4>Shop plans</h4><ul>
+      <li><a href="/plans/unlimited">Unlimited</a></li><li><a href="/plans/unlimited-plus">Unlimited Plus</a></li>
+      <li><a href="/plans/unlimited-ultra">Unlimited Ultra</a></li><li><a href="/plans/by-the-gig">By the Gig</a></li>
+      <li><a href="/plans/prepaid">Prepaid</a></li><li><a href="/plans/family">Family plans</a></li>
+      <li><a href="/plans/55plus">55+ plans</a></li><li><a href="/plans/military">Military plans</a></li>
+    </ul></div>
+    <div><h4>Perks</h4><ul>
+      <li><a href="/perks/streaming">Streaming on us</a></li><li><a href="/perks/international">International</a></li>
+      <li><a href="/perks/hotspot">Mobile hotspot</a></li><li><a href="/perks/travel">Travel benefits</a></li>
+      <li><a href="/perks/security">Scam shield</a></li><li><a href="/perks/cloud">Cloud storage</a></li>
+    </ul></div>
+    <div><h4>Switch to Northwind</h4><ul>
+      <li><a href="/switch/keep-number">Keep your number</a></li><li><a href="/switch/trade-in">Trade in your phone</a></li>
+      <li><a href="/switch/coverage">Check coverage</a></li><li><a href="/switch/etf">We pay your ETF</a></li>
+      <li><a href="/switch/esim">Try eSIM free</a></li><li><a href="/switch/compare">Compare carriers</a></li>
+    </ul></div>
+    <div><h4>Featured</h4><ul>
+      <li><a href="/deals/aurora7">Aurora 7 — on us</a></li><li><a href="/deals/bogo">Buy one, get one</a></li>
+      <li><a href="/deals/switcher">Switcher bonus</a></li><li><a href="/deals/trade">Trade-in deals</a></li>
+    </ul></div>
+  </div></div></div>
+
+  <div class="panel"><div class="container"><div class="cols">
+    <div><h4>Shop phones</h4><ul>
+      <li><a href="/phones/all">All phones</a></li><li><a href="/phones/5g">5G phones</a></li>
+      <li><a href="/phones/aurora">Aurora series</a></li><li><a href="/phones/certified">Certified pre-owned</a></li>
+      <li><a href="/phones/prepaid">Prepaid phones</a></li><li><a href="/phones/deals">Phone deals</a></li>
+      <li><a href="/phones/bring-your-own">Bring your own</a></li><li><a href="/phones/accessories">Cases &amp; accessories</a></li>
+    </ul></div>
+    <div><h4>Brands</h4><ul>
+      <li><a href="/phones/aurora">Aurora</a></li><li><a href="/phones/nimbus">Nimbus</a></li>
+      <li><a href="/phones/orbit">Orbit</a></li><li><a href="/phones/pixelia">Pixelia</a></li>
+      <li><a href="/phones/vertex">Vertex</a></li><li><a href="/phones/zephyr">Zephyr</a></li>
+    </ul></div>
+    <div><h4>Trade-in &amp; upgrade</h4><ul>
+      <li><a href="/trade-in/estimate">Estimate trade-in value</a></li><li><a href="/upgrade/eligibility">Upgrade eligibility</a></li>
+      <li><a href="/trade-in/how">How trade-in works</a></li><li><a href="/protection/plans">Device protection</a></li>
+    </ul></div>
+    <div><h4>Featured devices</h4><ul>
+      <li><a href="/phones/aurora7">Aurora 7</a></li><li><a href="/phones/aurora7-pro">Aurora 7 Pro</a></li>
+      <li><a href="/phones/nimbus-fold">Nimbus Fold</a></li><li><a href="/phones/orbit-flip">Orbit Flip</a></li>
+    </ul></div>
+  </div></div></div>
+
+  <div class="subnav"><div class="container"><ul>
+    <li><a href="/support/plans">Plans &amp; billing</a></li>
+    <li><a href="/support/device">Device help</a></li>
+    <li><a href="/support/network">Network &amp; coverage</a></li>
+    <li><a href="/support/account">Account &amp; login</a></li>
+    <li><a href="/support/international">International</a></li>
+    <li><a href="/support/5g">5G</a></li>
+    <li><a href="/support/esim">eSIM</a></li>
+    <li><a href="/support/troubleshoot">Troubleshooting</a></li>
+    <li><a href="/support/warranty">Warranty &amp; repairs</a></li>
+    <li><a href="/support/trade-in">Trade-in</a></li>
+    <li><a href="/support/accessibility">Accessibility</a></li>
+    <li><a href="/support/billing">Billing help</a></li>
+  </ul></div></div>
+</header>
+
+<!-- ===================== CHROME: marketing hero + promos ===================== -->
+<section class="hero-promo"><div class="container">
+  <h2>The new Aurora 7 — on us.</h2>
+  <p>Switch to an eligible Unlimited plan and trade in any phone, any condition. Limited time. Terms apply.</p>
+</div></section>
+<div class="promo">Holiday hours may affect store availability and support wait times. <a href="/stores">Check your store</a> · <a href="/support/chat">Chat 24/7</a></div>
+
+<!-- ===================== CHROME: popular-topics grid ===================== -->
+<section class="topics"><div class="container">
+  <h2>Popular support topics</h2>
+  <div class="topic-grid">
+    <div class="topic-tile"><a href="/support/activate">Activate a new device</a></div>
+    <div class="topic-tile"><a href="/support/transfer">Transfer data to a new phone</a></div>
+    <div class="topic-tile"><a href="/support/bill">Understand your bill</a></div>
+    <div class="topic-tile"><a href="/support/autopay">Set up AutoPay</a></div>
+    <div class="topic-tile"><a href="/support/esim">Set up eSIM</a></div>
+    <div class="topic-tile"><a href="/support/voicemail">Set up voicemail</a></div>
+    <div class="topic-tile"><a href="/support/hotspot">Use mobile hotspot</a></div>
+    <div class="topic-tile"><a href="/support/wifi-calling">Turn on Wi-Fi calling</a></div>
+    <div class="topic-tile"><a href="/support/roaming">Travel &amp; roaming</a></div>
+    <div class="topic-tile"><a href="/support/blocklist">Block a number</a></div>
+    <div class="topic-tile"><a href="/support/backup">Back up your phone</a></div>
+    <div class="topic-tile"><a href="/support/screenshot">Take a screenshot</a></div>
+    <div class="topic-tile"><a href="/support/reset">Restart or reset</a></div>
+    <div class="topic-tile"><a href="/support/storage">Free up storage</a></div>
+    <div class="topic-tile"><a href="/support/battery">Improve battery life</a></div>
+    <div class="topic-tile"><a href="/support/update">Update software</a></div>
+  </div>
+</div></section>
+
+<!-- ===================== CHROME: device carousel ===================== -->
+<section class="devices"><div class="container">
+  <h2 style="font-size:16px">Get help for your device</h2>
+  <div class="device-grid">
+    <div class="device-card"><h3>Aurora 7</h3><p>6.7" display · 5G · dual SIM · from $799 or $22/mo</p></div>
+    <div class="device-card"><h3>Aurora 7 Pro</h3><p>6.9" display · 5G · triple camera · from $1,099 or $30/mo</p></div>
+    <div class="device-card"><h3>Aurora 6</h3><p>6.5" display · 5G · from $599 or $16/mo</p></div>
+    <div class="device-card"><h3>Nimbus Fold</h3><p>Foldable · 7.6" inner display · from $1,499</p></div>
+    <div class="device-card"><h3>Orbit Flip</h3><p>Compact flip · 6.7" main display · from $899</p></div>
+    <div class="device-card"><h3>Pixelia 9</h3><p>6.3" display · AI camera · from $699</p></div>
+    <div class="device-card"><h3>Vertex Ultra</h3><p>6.8" display · S-pen · from $1,199</p></div>
+    <div class="device-card"><h3>Zephyr Lite</h3><p>Budget 5G · 6.4" display · from $299</p></div>
+  </div>
+</div></section>
+
+<!-- ===================== CORE: the actual article ===================== -->
+<div class="container">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> / <a href="/support">Support</a> / <a href="/support/device">Device help</a> / <span>Take a screenshot</span>
+  </nav>
+
+  <main>
+    <article>
+      <h1>How to take a screenshot on your Northwind phone</h1>
+      <div class="byline">Updated 2 weeks ago · Applies to: Aurora 5, Aurora 6, Aurora 7 · 3 min read · By Northwind Support Team</div>
+
+      <!-- Intro / marketing preamble: this is CONTENT (skinny keeps it), but it sits
+           BEFORE the answer — so 'prioritized' reorder is what pulls the answer above it. -->
+      <div class="intro">
+        <p>Capturing what's on your screen is one of the most useful things your Northwind phone can do — whether you're saving a confirmation number, grabbing a boarding pass, sharing a funny message, or keeping a record of an error before you contact support. On your Northwind phone, a screenshot saves an exact image of whatever is on the display at that moment, right into your Photos so you can crop it, mark it up, or share it in seconds.</p>
+        <p>This guide covers the fastest way to take a screenshot on the Aurora 5, Aurora 6, and Aurora 7, plus how to capture a long, scrolling page, how to edit and annotate your capture, how to share it, and what to do if the shortcut isn't working. If you use accessibility features or a case that covers the side buttons, there are notes for that too. Everything here applies to the current Northwind software; if a step looks different, check for a software update first.</p>
+      </div>
+
+      <div class="toc">
+        <strong>In this article</strong>
+        <ul>
+          <li><a href="#capture">Take a screenshot</a></li>
+          <li><a href="#scroll">Capture a scrolling screenshot</a></li>
+          <li><a href="#edit">Edit and mark up</a></li>
+          <li><a href="#share">Share a screenshot</a></li>
+          <li><a href="#trouble">Troubleshooting</a></li>
+        </ul>
+      </div>
+
+      <!-- The direct answer to the query. THIS is the block that should reach the LLM first. -->
+      <section class="answer" id="capture" data-core aria-label="Answer">
+        <p><strong>To take a screenshot on your Northwind phone:</strong></p>
+        <ol>
+          <li>Open the screen you want to capture.</li>
+          <li>Press and hold the <strong>Side button</strong> and the <strong>Volume-down button</strong> at the same time, then release both.</li>
+          <li>The screen flashes and a thumbnail appears in the lower-left corner. Tap it to edit, or swipe it away to save.</li>
+          <li>Find your screenshot in <strong>Photos &rarr; Albums &rarr; Screenshots</strong>.</li>
+        </ol>
+        <div class="device-tabs" aria-hidden="true"><span>Aurora 7</span><span>Aurora 6</span><span>Aurora 5</span></div>
+      </section>
+
+      <h2 id="scroll">Capture a scrolling screenshot</h2>
+      <p>After you take a screenshot, tap the thumbnail in the lower-left corner, then choose <strong>Capture more</strong> to grab a full, scrolling page — handy for long articles, chat threads, or receipts. Drag the crop handles to set how much of the page to keep, then tap <strong>Done</strong> to save the full-length image to your Screenshots album.</p>
+
+      <h2 id="edit">Edit and mark up a screenshot</h2>
+      <p>Tap the thumbnail right after you capture it to open the editor. From there you can crop, rotate, draw, highlight, or add text. Use the markup tools to circle the important part or hide sensitive information before you share. Tap <strong>Done</strong> to save your changes to the Screenshots album.</p>
+
+      <h2 id="share">Share a screenshot</h2>
+      <p>Open the screenshot in Photos and tap the <strong>Share</strong> icon to send it by message, email, or your favorite app. You can also share directly from the thumbnail preview without saving first — useful when you just need to fire off a quick image and move on.</p>
+
+      <h2 id="trouble">Troubleshooting</h2>
+      <p>If the button combination isn't working, make sure no case is blocking the buttons, and confirm your software is up to date under <a href="/support/software-update">Settings &rarr; Software update</a>. Some accessibility gestures can override the default capture shortcut; if you use AssistiveTouch or a custom gesture, check your accessibility settings. Still stuck? <a href="/support/chat">Chat with us</a> or <a href="/stores">visit a store</a>.</p>
+    </article>
+
+    <!-- CHROME below the article -->
+    <div class="feedback">
+      <p><strong>Was this article helpful?</strong> &nbsp; <a href="#">Yes</a> &nbsp; <a href="#">No</a></p>
+      <p>Still need help? <a href="/support/chat">Chat with us</a>, <a href="/support/call">call 1-800-NORTHWIND</a>, or <a href="/stores">visit a store</a>.</p>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== CHROME: community + newsletter ===================== -->
+<section class="community"><div class="container">
+  <h2 style="font-size:16px">Ask the Northwind community</h2>
+  <p>Thousands of members share tips and answers every day. <a href="/community/device">Browse device discussions</a> or <a href="/community/ask">ask a question</a>.</p>
+</div></section>
+<section class="newsletter"><div class="container">
+  <h2 style="font-size:16px;margin:0 0 8px">Get tips, deals, and updates</h2>
+  <p style="margin:0 0 12px">Sign up for the Northwind newsletter.</p>
+  <input type="email" placeholder="Email address"> <button style="padding:10px 18px;border-radius:8px;border:0;background:var(--nw-accent);color:#fff;font-weight:700">Subscribe</button>
+</div></section>
+
+<!-- ===================== CHROME: related articles ===================== -->
+<section class="related"><div class="container">
+  <h2 style="font-size:16px">Related articles</h2>
+  <ul>
+    <li><a href="/support/record-screen">How to record your screen</a></li>
+    <li><a href="/support/transfer">Transfer data to a new phone</a></li>
+    <li><a href="/support/backup">Back up your phone to the cloud</a></li>
+    <li><a href="/support/storage">Free up storage space</a></li>
+    <li><a href="/support/photos-share">Share photos and albums</a></li>
+    <li><a href="/support/battery">Improve battery life</a></li>
+    <li><a href="/support/software-update">Update your software</a></li>
+    <li><a href="/support/accessibility">Accessibility features</a></li>
+    <li><a href="/support/reset">Restart or reset your phone</a></li>
+    <li><a href="/support/find-my">Find a lost phone</a></li>
+    <li><a href="/support/esim">Set up eSIM</a></li>
+    <li><a href="/support/hotspot">Use mobile hotspot</a></li>
+    <li><a href="/support/voicemail">Set up visual voicemail</a></li>
+    <li><a href="/support/wifi-calling">Turn on Wi-Fi calling</a></li>
+    <li><a href="/support/roaming">Use your phone abroad</a></li>
+  </ul>
+</div></section>
+
+<!-- ===================== CHROME: mega footer ===================== -->
+<footer class="site"><div class="container">
+  <div class="cols">
+    <div><h4>Shop</h4><ul>
+      <li><a href="/phones">Phones</a></li><li><a href="/plans">Plans</a></li>
+      <li><a href="/deals">Deals</a></li><li><a href="/accessories">Accessories</a></li>
+      <li><a href="/watches">Watches</a></li><li><a href="/internet">Home Internet</a></li>
+      <li><a href="/trade-in">Trade-in</a></li><li><a href="/bring-your-own">Bring your own phone</a></li>
+    </ul></div>
+    <div><h4>Support</h4><ul>
+      <li><a href="/support">Support home</a></li><li><a href="/support/device">Device help</a></li>
+      <li><a href="/support/billing">Billing</a></li><li><a href="/support/network">Network</a></li>
+      <li><a href="/support/esim">eSIM</a></li><li><a href="/support/roaming">Roaming</a></li>
+      <li><a href="/support/warranty">Warranty</a></li><li><a href="/coverage">Coverage map</a></li>
+    </ul></div>
+    <div><h4>About</h4><ul>
+      <li><a href="/about">About Northwind</a></li><li><a href="/newsroom">Newsroom</a></li>
+      <li><a href="/careers">Careers</a></li><li><a href="/investors">Investors</a></li>
+      <li><a href="/sustainability">Sustainability</a></li><li><a href="/network">Our network</a></li>
+    </ul></div>
+    <div><h4>Community</h4><ul>
+      <li><a href="/community">Forums</a></li><li><a href="/blog">Blog</a></li>
+      <li><a href="/events">Events</a></li><li><a href="/referrals">Refer a friend</a></li>
+      <li><a href="/accessibility">Accessibility</a></li><li><a href="/responsibility">Responsibility</a></li>
+    </ul></div>
+    <div><h4>Business</h4><ul>
+      <li><a href="/business/plans">Business plans</a></li><li><a href="/business/devices">Business devices</a></li>
+      <li><a href="/business/iot">IoT &amp; connected</a></li><li><a href="/business/solutions">Solutions</a></li>
+      <li><a href="/business/support">Business support</a></li><li><a href="/business/contact">Contact sales</a></li>
+    </ul></div>
+    <div><h4>Get the app</h4><ul>
+      <li><a href="/app/ios">iOS app</a></li><li><a href="/app/android">Android app</a></li>
+      <li><a href="/social/x">X</a></li><li><a href="/social/facebook">Facebook</a></li>
+      <li><a href="/social/instagram">Instagram</a></li><li><a href="/social/youtube">YouTube</a></li>
+    </ul></div>
+  </div>
+  <div class="legal">
+    <p>&copy; 2026 Northwind Mobile (fictional). All rights reserved. Coverage not available everywhere; see coverage map for details. Device availability, pricing, and promotional terms subject to change and may require a qualifying plan, trade-in, and eligible upgrade. Taxes and fees additional. Monthly device payment examples assume 24-month agreement with approved credit; 0% APR. Trade-in value varies by device model and condition and is applied as monthly bill credits over the agreement term; if you cancel early, remaining balance is due. Streaming, international, and hotspot perks require a qualifying plan and may be subject to network management, speed reductions, and data caps.</p>
+    <p><a href="/legal/privacy">Privacy Center</a> · <a href="/legal/terms">Terms &amp; Conditions</a> · <a href="/legal/accessibility">Accessibility</a> · <a href="/legal/consumer-info">Consumer information</a> · <a href="/legal/interest-based-ads">Interest-based ads</a> · <a href="/legal/do-not-sell">Do not sell or share my personal information</a> · <a href="/legal/california">California privacy</a> · <a href="/legal/open-internet">Open internet</a> · <a href="/legal/broadband">Broadband facts</a></p>
+  </div>
+</div></footer>
+
+<div class="cookie"><div class="container">We use cookies to improve your experience and for interest-based advertising. <a href="/legal/cookies" style="color:#8cf">Manage preferences</a> · <a href="#" style="color:#8cf">Accept all</a></div></div>
+
+<script>/* consent + tag manager stub (stripped by skinnify) */(function(){nwTrack('consent','default');var s=document.createElement('script');s.async=true;s.src='/assets/tagmanager.js';document.head.appendChild(s);})();</script>
+<script>/* live chat widget bootstrap */(function(){window.nwChat={open:function(){}};})();</script>
+</body>
+</html>

@@ -50,6 +50,11 @@ enc.encode('warmup'); // pre-load WASM binary so the first demo run isn't slow
 const WASM_URL     = process.env.WASM_URL || 'https://bede2402-c4b7-4234-b17c-5e04fc46ef00.fwf.app';
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 
+// Prioritized-delivery spike (skinny HTML for AI bots) — see demo/spike/.
+// Isolated from the commerce demo; a separate thought-leadership track (telco).
+const { skinnify, prioritize } = require('./spike/skinnify.js');
+const SPIKE_DIR = path.join(__dirname, 'spike');
+
 // ── Scenario config (Phase A) ────────────────────────────────────────────────
 // Each demo scenario points the SAME flow at a different backend (property host,
 // converter, optional features). Driven by scenarios.config.json; the UI picks
@@ -1909,6 +1914,54 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && req.url === '/lab') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(RENDER_LAB_HTML);
+        return;
+    }
+
+    // ── Prioritized-delivery spike (skinny HTML) ────────────────────────────
+    // Standalone page (demo/spike/index.html) + skinnify endpoint. Read from disk
+    // at request time so the spike stays a self-contained, editable directory.
+    if (req.method === 'GET' && (req.url === '/spike' || req.url === '/spike/')) {
+        try {
+            const html = fs.readFileSync(path.join(SPIKE_DIR, 'index.html'), 'utf8');
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(html);
+        } catch (e) {
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('spike/index.html not found: ' + e.message);
+        }
+        return;
+    }
+
+    // Skinnify the sample page (or a live URL) and return the before/after metrics.
+    if (req.method === 'POST' && req.url === '/spike/skinnify') {
+        let body = '';
+        req.on('data', (c) => { body += c.toString(); });
+        req.on('end', async () => {
+            try {
+                const o = JSON.parse(body || '{}');
+                let source, sourceHtml;
+                if (o.url && /^https?:\/\//i.test(o.url)) {
+                    const raw = await fetchRaw(o.url);
+                    if (!raw.html) return sendJSON(res, 502, { error: 'Could not fetch ' + o.url + ' (status ' + raw.status + ')' });
+                    source = o.url; sourceHtml = raw.html;
+                } else {
+                    source = 'sample:telco-support'; sourceHtml = fs.readFileSync(path.join(SPIKE_DIR, 'telco-support-sample.html'), 'utf8');
+                }
+                const skinnyR = skinnify(sourceHtml);
+                const prioR = prioritize(sourceHtml);
+                const coreAnchor = skinnyR.coreAnchor;
+                const answerAt = (h) => { if (!coreAnchor) return null; const i = h.indexOf(coreAnchor); return i < 0 ? null : countTokens(h.slice(0, i)); };
+                const pack = (h) => ({ bytes: Buffer.byteLength(h), tokens: countTokens(h), answerAt: answerAt(h), html: h });
+                sendJSON(res, 200, {
+                    source, title: skinnyR.title, coreAnchor,
+                    original: pack(sourceHtml),
+                    skinny: pack(skinnyR.html),
+                    prioritized: pack(prioR.html),
+                });
+            } catch (err) {
+                sendJSON(res, 500, { error: err.message });
+            }
+        });
         return;
     }
 
