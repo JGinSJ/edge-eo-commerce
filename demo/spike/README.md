@@ -18,6 +18,10 @@ bot-optimized variants from a fat page via a per-**template** config, and measur
 - **prioritized** — skinny + **semantic reorder**: hoist the core answer above the
   marketing intro/TOC. "Most important items in the first N tokens" — the exact ask.
 
+And the **routing**: a "who's asking?" selector maps each visitor to a variant via a
+policy that mirrors the edge `crawler-policy` — 👤 person / 🔍 search → full HTML,
+🤖 AI crawler → skinny, ✨ answer engine → prioritized. One URL, negotiated at the edge.
+
 Sample = a fat, **fictional** telco support page (`telco-support-sample.html`,
 "how to take a screenshot") where the answer is buried under mega-menus/promos/footer,
 and (inside the article) behind a marketing intro + table-of-contents.
@@ -43,7 +47,8 @@ Leave the URL blank for the sample, or paste any URL to skinnify it live (the
   CSS selectors for chrome-to-strip + content root + core-answer anchor. 50 configs →
   375k pages; this is the scale story in miniature. Uses `cheerio`.
 - `index.html` — the standalone `/spike` UI: 3-row token ruler + tiles + before/after
-  panes with a Skinny/Prioritized toggle on the bot pane.
+  panes, with a **"who's asking?" bot selector** (client-side `ROUTING` policy) that
+  re-routes the bot pane + highlights the matching ruler row.
 - Wired into `../server.js` via two routes: `GET /spike`, `POST /spike/skinnify`
   (`{url?}` → returns `original`, `skinny`, `prioritized`, each `{bytes,tokens,answerAt,html}`).
 

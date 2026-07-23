@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prioritized Delivery — Skinny &amp; Prioritized HTML for AI bots (spike)</title>
+<title>Prioritized Delivery — who's asking → which variant (spike)</title>
 <style>
   :root{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--blue:#00558C;--accent:#00A4EB;--good:#0f9d58;--gold:#b45309;--bg:#f6f8fb}
   *{box-sizing:border-box}
@@ -12,13 +12,15 @@
   header.hero{background:linear-gradient(120deg,#022f5b,#00558C);color:#fff;border-radius:16px;padding:26px 28px;margin-bottom:22px}
   .eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#9fd4f5}
   h1{font-size:26px;margin:6px 0 8px}
-  header.hero p{margin:0;max-width:840px;color:#dbeafe;line-height:1.55;font-size:15px}
+  header.hero p{margin:0;max-width:860px;color:#dbeafe;line-height:1.55;font-size:15px}
   .spike-tag{display:inline-block;margin-top:12px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#ffffff22;border:1px solid #ffffff44;color:#fff;padding:3px 10px;border-radius:999px}
   .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0 6px}
   .bar input{flex:1;min-width:280px;padding:11px 13px;border:1px solid var(--line);border-radius:9px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
   .bar button{background:var(--accent);color:#fff;border:0;padding:11px 22px;border-radius:9px;font-weight:700;cursor:pointer}
   .bar button:disabled{opacity:.5;cursor:default}
   .hint{font-size:12.5px;color:var(--muted);margin:2px 0 22px}
+  .policy{font-size:12px;color:var(--muted);background:#eef4fb;border:1px solid #dbe8f6;border-radius:9px;padding:9px 13px;margin:0 0 20px}
+  .policy b{color:#334155}
   .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
   .tile{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px 18px}
   .tile .lab{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
@@ -31,30 +33,36 @@
   .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:20px}
   .card h2{font-size:15px;margin:0 0 4px}
   .card .sub{font-size:12.5px;color:var(--muted);margin:0 0 16px}
-  .ruler-row{margin:16px 0}
+  .ruler-row{margin:16px 0;padding:8px 10px;border-radius:9px;border:1px solid transparent;transition:background .12s,border-color .12s}
+  .ruler-row.hot{background:#fff7ed;border-color:#fed7aa}
   .ruler-head{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px}
   .ruler-head .who{font-weight:700}
   .ruler-head .meta{color:var(--muted)}
+  .ruler-head .ans{color:#e11d48;font-weight:800}
   .track{position:relative;height:26px;background:#eef2f7;border-radius:7px;overflow:visible}
   .fill{position:absolute;top:0;left:0;height:100%;border-radius:7px}
   .fill.orig{background:repeating-linear-gradient(90deg,#cbd5e1,#cbd5e1 8px,#dbe3ec 8px,#dbe3ec 16px)}
   .fill.skinny{background:linear-gradient(90deg,#9ad9bb,#12855a)}
   .fill.prio{background:linear-gradient(90deg,#f7c877,#b45309)}
   .marker{position:absolute;top:-4px;height:34px;width:2px;background:#e11d48;z-index:2}
-  .ruler-head .ans{color:#e11d48;font-weight:800}
   .axis{display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-top:6px}
   .legend{font-size:12px;color:var(--muted);margin-top:14px}
   .legend .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
   .panes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .pane{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-  .pane .phead{padding:11px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .pane .phead{padding:11px 16px;border-bottom:1px solid var(--line)}
+  .pane .phead .row1{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .pane .phead .t{font-weight:700;font-size:13px}
-  .pane .phead .b{font-size:11px;font-weight:700;color:#475569;background:#f1f5f9;border-radius:999px;padding:3px 9px}
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-  .seg button{border:0;background:#fff;color:#475569;font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer}
-  .seg button.on{background:var(--blue);color:#fff}
-  .pane iframe{width:100%;height:440px;border:0;background:#fff}
-  .pane pre{margin:0;height:440px;overflow:auto;padding:14px 16px;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;background:#0b1020;color:#c8d3e6;white-space:pre-wrap;word-break:break-word}
+  .pane .phead .b{font-size:11px;font-weight:800;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .b.v-original{color:#334155;background:#e2e8f0}
+  .b.v-skinny{color:#065f46;background:#dcfce7}
+  .b.v-prioritized{color:#7c2d12;background:#ffedd5}
+  .pane .why{font-size:12px;color:var(--muted);margin-top:7px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;padding:11px 16px;border-bottom:1px solid var(--line);background:#fafcff}
+  .chip{border:1px solid var(--line);background:#fff;color:#334155;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;gap:5px;align-items:center}
+  .chip.on{border-color:var(--blue);background:var(--blue);color:#fff}
+  .pane iframe{width:100%;height:430px;border:0;background:#fff}
+  .pane pre{margin:0;height:430px;overflow:auto;padding:14px 16px;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;background:#0b1020;color:#c8d3e6;white-space:pre-wrap;word-break:break-word}
   .err{color:#c0392b;font-size:13px;margin:10px 0}
   .spin{display:inline-block;width:13px;height:13px;border:2px solid #ffffff66;border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:7px}
   @keyframes sp{to{transform:rotate(360deg)}}
@@ -65,8 +73,8 @@
 <div class="wrap">
   <header class="hero">
     <div class="eyebrow">Content negotiation at the edge · thought-leadership spike</div>
-    <h1>Prioritized delivery — skinny &amp; prioritized HTML for AI bots</h1>
-    <p>One URL, different payloads by who's asking. A <strong>person</strong> gets the full page — mega-menus, promos, related links, footer, the works. An <strong>AI answer-engine</strong> gets a bot-optimized variant: <strong>skinny</strong> (chrome stripped) or <strong>prioritized</strong> (chrome stripped <em>and</em> the answer hoisted above the marketing intro). Each is derived from a per-<em>template</em> config — 50 configs → 375k pages — and would run at the edge per bot.</p>
+    <h1>Prioritized delivery — who's asking decides which HTML they get</h1>
+    <p>One URL. The edge inspects <strong>who's asking</strong> and routes each visitor to the right payload: a <strong>person</strong> and <strong>search crawlers</strong> get the full page; <strong>AI crawlers</strong> get <strong>skinny</strong> HTML (chrome stripped); <strong>answer engines</strong> get <strong>prioritized</strong> HTML (chrome stripped <em>and</em> the answer hoisted first). Each variant is derived from a per-<em>template</em> config — 50 configs → 375k pages — and the routing mirrors the edge's <code>crawler-policy</code>.</p>
     <span class="spike-tag">Spike · derived in-process · sample: fictional telco support page</span>
   </header>
 
@@ -74,7 +82,11 @@
     <input id="url" type="url" placeholder="Leave blank for the sample telco page, or paste a URL…" />
     <button id="run" type="button">Transform</button>
   </div>
-  <div class="hint" id="hint">Derives both variants and measures how deep the answer sits in each payload.</div>
+  <div class="hint" id="hint">Derives all variants and measures how deep the answer sits in each payload.</div>
+
+  <div class="policy">
+    <b>Routing policy</b> &nbsp;·&nbsp; 👤 Person → full live page &nbsp;·&nbsp; 🔍 Search (Googlebot, Bingbot) → full HTML &nbsp;·&nbsp; 🤖 AI crawler (ClaudeBot, GPTBot, Google-Extended) → skinny &nbsp;·&nbsp; ✨ Answer engine (Perplexity, OAI-SearchBot) → prioritized
+  </div>
 
   <div id="err" class="err" style="display:none"></div>
 
@@ -99,18 +111,18 @@
 
   <div class="card" id="ruler" style="display:none">
     <h2>Tokens to the answer</h2>
-    <p class="sub">Same token axis for all three. The bar is how much the bot has to read; the red marker is where the actual answer begins. Watch it march left: strip the chrome, then reorder.</p>
-    <div class="ruler-row">
-      <div class="ruler-head"><span class="who">👤 A person — full page</span><span class="meta" id="rh-o"></span></div>
-      <div class="track"><div class="fill orig" id="fill-o"></div><div class="marker" id="mk-o" data-label="answer"></div></div>
+    <p class="sub">Same token axis for all three. The bar is how much the bot has to read; the red marker is where the answer begins. The highlighted row is what the selected visitor is routed to.</p>
+    <div class="ruler-row" id="row-original">
+      <div class="ruler-head"><span class="who">👤🔍 Full page — person &amp; search crawlers</span><span class="meta" id="rh-o"></span></div>
+      <div class="track"><div class="fill orig" id="fill-o"></div><div class="marker" id="mk-o"></div></div>
     </div>
-    <div class="ruler-row">
-      <div class="ruler-head"><span class="who">🤖 Skinny — chrome stripped</span><span class="meta" id="rh-s"></span></div>
-      <div class="track"><div class="fill skinny" id="fill-s"></div><div class="marker" id="mk-s" data-label="answer"></div></div>
+    <div class="ruler-row" id="row-skinny">
+      <div class="ruler-head"><span class="who">🤖 Skinny — AI crawlers</span><span class="meta" id="rh-s"></span></div>
+      <div class="track"><div class="fill skinny" id="fill-s"></div><div class="marker" id="mk-s"></div></div>
     </div>
-    <div class="ruler-row">
-      <div class="ruler-head"><span class="who">🤖 Prioritized — answer hoisted first</span><span class="meta" id="rh-p"></span></div>
-      <div class="track"><div class="fill prio" id="fill-p"></div><div class="marker" id="mk-p" data-label="answer"></div></div>
+    <div class="ruler-row" id="row-prioritized">
+      <div class="ruler-head"><span class="who">✨ Prioritized — answer engines</span><span class="meta" id="rh-p"></span></div>
+      <div class="track"><div class="fill prio" id="fill-p"></div><div class="marker" id="mk-p"></div></div>
       <div class="axis"><span>token 0</span><span id="axis-max"></span></div>
     </div>
     <div class="legend"><span class="dot" style="background:#cbd5e1"></span>full page &nbsp;&nbsp; <span class="dot" style="background:#12855a"></span>skinny &nbsp;&nbsp; <span class="dot" style="background:#b45309"></span>prioritized &nbsp;&nbsp; <span class="dot" style="background:#e11d48"></span>where the answer starts</div>
@@ -118,14 +130,16 @@
 
   <div class="panes" id="panes" style="display:none">
     <div class="pane">
-      <div class="phead"><span class="t">👤 What a person sees</span><span class="b" id="b-o">full HTML</span></div>
+      <div class="phead"><div class="row1"><span class="t">👤 What a person sees</span><span class="b v-original" id="b-o">full HTML</span></div>
+        <div class="why">No bot signature — served the full live page, untouched.</div></div>
       <iframe id="frame" sandbox="allow-same-origin" title="Original page"></iframe>
     </div>
     <div class="pane">
       <div class="phead">
-        <span class="t">🤖 What the AI bot reads</span>
-        <span class="seg"><button type="button" id="seg-skinny" class="on">Skinny</button><button type="button" id="seg-prio">Prioritized</button></span>
+        <div class="row1"><span class="t" id="bot-t">🤖 What the bot receives</span><span class="b" id="bot-b">–</span></div>
+        <div class="why" id="bot-why"></div>
       </div>
+      <div class="chips" id="chips"></div>
       <pre id="bot">–</pre>
     </div>
   </div>
@@ -133,25 +147,66 @@
 
 <script>
   var $ = function (id) { return document.getElementById(id); };
-  var data = null, mode = 'skinny';
+  var data = null, selectedBot = 'perplexitybot';
+
+  // Routing policy — mirrors the edge crawler-policy: bot class → variant.
+  var ROUTING = {
+    googlebot:         { variant: 'original',    icon: '🔍', klass: 'Search crawler', why: 'Renders JavaScript and reads structured data — gets the full HTML.' },
+    bingbot:           { variant: 'original',    icon: '🔍', klass: 'Search crawler', why: 'Renders JavaScript — gets the full HTML.' },
+    claudebot:         { variant: 'skinny',      icon: '🤖', klass: 'AI crawler',     why: 'Chrome stripped — a fraction of the tokens, content in original order.' },
+    gptbot:            { variant: 'skinny',      icon: '🤖', klass: 'AI crawler',     why: 'Chrome stripped — a fraction of the tokens, content in original order.' },
+    'google-extended': { variant: 'skinny',      icon: '🤖', klass: 'AI crawler',     why: 'Chrome stripped — a fraction of the tokens, content in original order.' },
+    perplexitybot:     { variant: 'prioritized', icon: '✨', klass: 'Answer engine',  why: 'Chrome stripped AND the answer hoisted above the intro — reaches the point first.' },
+    'oai-searchbot':   { variant: 'prioritized', icon: '✨', klass: 'Answer engine',  why: 'Chrome stripped AND the answer hoisted above the intro — reaches the point first.' },
+  };
+  var BOTS = [
+    { kind: 'googlebot', label: 'Googlebot' }, { kind: 'bingbot', label: 'Bingbot' },
+    { kind: 'claudebot', label: 'ClaudeBot' }, { kind: 'gptbot', label: 'GPTBot' },
+    { kind: 'google-extended', label: 'Google-Extended' },
+    { kind: 'perplexitybot', label: 'PerplexityBot' }, { kind: 'oai-searchbot', label: 'OAI-SearchBot' },
+  ];
+  var VLABEL = { original: 'Full HTML', skinny: 'Skinny', prioritized: 'Prioritized' };
+
   function fmt(n) { return (n == null ? '–' : Number(n).toLocaleString()); }
   function kb(n) { return n >= 1024 ? (Math.round(n / 1024 * 10) / 10) + ' KB' : n + ' B'; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
   function xFold(a, b) { if (!a || !b) return ''; var f = a / b; return (f >= 10 ? Math.round(f) : Math.round(f * 10) / 10) + '×'; }
   function pctSmaller(a, b) { if (!a || !b) return ''; return Math.round((1 - b / a) * 100) + '% smaller'; }
-
-  function placeMarker(mk, at, max) {
-    if (at == null) { mk.style.display = 'none'; return; }
-    mk.style.display = '';
-    mk.style.left = (at / max * 100) + '%';
-  }
+  function placeMarker(mk, at, max) { if (at == null) { mk.style.display = 'none'; return; } mk.style.display = ''; mk.style.left = (at / max * 100) + '%'; }
   function meta(v) { return fmt(v.tokens) + ' tokens · ' + kb(v.bytes) + ' · <span class="ans">answer @ ' + fmt(v.answerAt) + '</span>'; }
 
-  function renderBotPane() {
-    var v = data[mode];
-    $('bot').textContent = v.html;
-    $('seg-skinny').className = mode === 'skinny' ? 'on' : '';
-    $('seg-prio').className = mode === 'prioritized' ? 'on' : '';
+  function buildChips() {
+    $('chips').innerHTML = BOTS.map(function (b) {
+      var r = ROUTING[b.kind];
+      return '<button type="button" class="chip' + (b.kind === selectedBot ? ' on' : '') + '" data-k="' + b.kind + '">' + r.icon + ' ' + esc(b.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('chips').querySelectorAll('.chip'), function (el) {
+      el.addEventListener('click', function () { selectedBot = el.getAttribute('data-k'); renderRouting(); });
+    });
+  }
+
+  function renderRouting() {
+    if (!data) return;
+    var r = ROUTING[selectedBot];
+    var routed = data[r.variant];
+    var bot = BOTS.filter(function (b) { return b.kind === selectedBot; })[0] || { label: selectedBot };
+
+    // chip active states
+    Array.prototype.forEach.call($('chips').querySelectorAll('.chip'), function (el) {
+      el.className = 'chip' + (el.getAttribute('data-k') === selectedBot ? ' on' : '');
+    });
+
+    // right pane header + source
+    $('bot-t').textContent = r.icon + ' What ' + bot.label + ' receives';
+    $('bot-b').className = 'b v-' + r.variant;
+    $('bot-b').textContent = r.klass + ' → ' + VLABEL[r.variant];
+    $('bot-why').innerHTML = r.why + ' &nbsp;·&nbsp; <span class="ans" style="color:#e11d48;font-weight:800">' + fmt(routed.tokens) + ' tokens · answer @ ' + fmt(routed.answerAt) + '</span>';
+    $('bot').textContent = routed.html;
+
+    // ruler highlight
+    ['original', 'skinny', 'prioritized'].forEach(function (v) {
+      $('row-' + v).className = 'ruler-row' + (v === r.variant ? ' hot' : '');
+    });
   }
 
   function render(d) {
@@ -160,42 +215,35 @@
     var o = d.original, s = d.skinny, p = d.prioritized;
     ['tiles', 'ruler', 'panes'].forEach(function (id) { $(id).style.display = ''; });
 
-    // tiles — headline is person → prioritized (best case), with skinny noted
+    // tiles — the "best case" headline: person → prioritized
     $('ans-o').textContent = fmt(o.answerAt); $('ans-p').textContent = fmt(p.answerAt);
     $('ans-d').textContent = (o.answerAt && p.answerAt) ? (Math.round(o.answerAt / p.answerAt) + '× closer to the answer') : '';
-    $('ans-note').textContent = 'skinny alone: token ' + fmt(s.answerAt) + '  ·  reorder moves it to ' + fmt(p.answerAt);
+    $('ans-note').textContent = 'person → prioritized (best case) · skinny lands at token ' + fmt(s.answerAt);
     $('tok-o').textContent = fmt(o.tokens); $('tok-s').textContent = fmt(p.tokens);
     $('tok-d').textContent = xFold(o.tokens, p.tokens) + ' fewer · ' + pctSmaller(o.tokens, p.tokens);
     $('by-o').textContent = kb(o.bytes); $('by-s').textContent = kb(p.bytes);
     $('by-d').textContent = pctSmaller(o.bytes, p.bytes);
 
-    // ruler — shared axis scaled to original total tokens
+    // ruler
     var max = Math.max(o.tokens, 1);
     $('axis-max').textContent = 'token ' + fmt(max);
     $('fill-o').style.width = '100%';
     $('fill-s').style.width = Math.max(2, s.tokens / max * 100) + '%';
     $('fill-p').style.width = Math.max(2, p.tokens / max * 100) + '%';
-    placeMarker($('mk-o'), o.answerAt, max);
-    placeMarker($('mk-s'), s.answerAt, max);
-    placeMarker($('mk-p'), p.answerAt, max);
-    $('rh-o').innerHTML = meta(o);
-    $('rh-s').innerHTML = meta(s);
-    $('rh-p').innerHTML = meta(p);
+    placeMarker($('mk-o'), o.answerAt, max); placeMarker($('mk-s'), s.answerAt, max); placeMarker($('mk-p'), p.answerAt, max);
+    $('rh-o').innerHTML = meta(o); $('rh-s').innerHTML = meta(s); $('rh-p').innerHTML = meta(p);
 
     // panes
     $('frame').srcdoc = o.html;
-    $('b-o').textContent = kb(o.bytes);
-    renderBotPane();
+    buildChips();
+    renderRouting();
     $('hint').innerHTML = 'Source: <code>' + esc(d.source) + '</code> · answer anchor: “' + esc(d.coreAnchor) + '”';
   }
 
   function run() {
     var btn = $('run'); btn.disabled = true;
     $('hint').innerHTML = '<span class="spin"></span>Transforming…';
-    fetch('/spike/skinnify', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: ($('url').value || '').trim() })
-    })
+    fetch('/spike/skinnify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: ($('url').value || '').trim() }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         btn.disabled = false;
@@ -207,8 +255,6 @@
 
   $('run').addEventListener('click', run);
   $('url').addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
-  $('seg-skinny').addEventListener('click', function () { mode = 'skinny'; renderBotPane(); });
-  $('seg-prio').addEventListener('click', function () { mode = 'prioritized'; renderBotPane(); });
   run(); // default: the sample telco page
 </script>
 </body>
