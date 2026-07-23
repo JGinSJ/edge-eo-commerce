@@ -1,18 +1,6 @@
 {
-  "default": "prerender",
+  "default": "convert-cache",
   "scenarios": [
-    {
-      "id": "prerender",
-      "label": "Prerender + Per-Crawler",
-      "blurb": "Headless render → HTML for search crawlers, Markdown for AI crawlers, per-crawler from one cached render. Powers the \"Who's asking?\" view.",
-      "source": "harper-prerender-html-md",
-      "host": "stopwaitingshipit.com",
-      "ewScenario": "prerender",
-      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
-      "edgeIp": "",
-      "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
-      "features": { "harperCache": true, "renderLab": true, "perCrawler": true, "writeThrough": false, "needsPrerender": true }
-    },
     {
       "id": "convert-cache",
       "label": "Convert + Cache",
@@ -24,6 +12,18 @@
       "edgeIp": "",
       "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
       "features": { "harperCache": true, "renderLab": false, "perCrawler": false, "writeThrough": false, "needsPrerender": true }
+    },
+    {
+      "id": "prerender",
+      "label": "Prerender + Per-Crawler",
+      "blurb": "Headless render → HTML for search crawlers, Markdown for AI crawlers, per-crawler from one cached render. Powers the \"Who's asking?\" view.",
+      "source": "harper-prerender-html-md",
+      "host": "stopwaitingshipit.com",
+      "ewScenario": "prerender",
+      "wasmUrl": "https://977adc68-2ede-4bf3-9b1e-41923fa6d7a9.fwf.app",
+      "edgeIp": "",
+      "stagingHost": "stopwaitingshipit.com.edgekey-staging.net",
+      "features": { "harperCache": true, "renderLab": true, "perCrawler": true, "writeThrough": false, "needsPrerender": true }
     },
     {
       "id": "md-cache",

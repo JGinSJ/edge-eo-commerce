@@ -447,6 +447,11 @@ header{background:#002F6C;padding:0 48px;
 .header-pill{background:rgba(0,164,235,.18);border:1px solid rgba(0,164,235,.35);
              color:#7dd6f0;padding:4px 14px;border-radius:100px;
              font-size:12px;font-weight:600;letter-spacing:.3px}
+.header-right{display:flex;align-items:center;gap:14px}
+.spike-link{color:#9fb8d4;text-decoration:none;font-size:12px;font-weight:600;
+            letter-spacing:.2px;padding:4px 12px;border-radius:100px;
+            border:1px solid rgba(159,184,212,.28);transition:color .12s,border-color .12s,background .12s}
+.spike-link:hover{color:#fff;border-color:rgba(159,184,212,.6);background:rgba(159,184,212,.1)}
 
 /* ── Hero ── */
 .hero{background:#002F6C;padding:0 48px 40px;border-bottom:3px solid #00A4EB}
@@ -472,6 +477,15 @@ main{max-width:1120px;margin:0 auto;padding:36px 24px 60px}
            border-radius:8px;font-size:15px;color:#002F6C;outline:none;
            transition:border-color .15s}
 .url-input:focus{border-color:#00A4EB}
+.flush-btn{background:#fff;color:#475569;border:1.5px solid #cbd5e1;border-radius:10px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+.flush-btn:hover{border-color:#00A4EB;color:#00A4EB}
+.flush-btn:disabled{opacity:.5;cursor:default}
+.flush-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;min-height:16px}
+.flush-status{font-size:13px;color:#64748b}
+.flush-status.ok{color:#0f7a4f}
+.flush-status.err{color:#c0392b}
+.flush-all{font-size:12.5px;color:#8a97a5;text-decoration:none;font-weight:600}
+.flush-all:hover{color:#00A4EB;text-decoration:underline}
 .run-btn{background:#00A4EB;color:#fff;border:none;padding:12px 32px;
          border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;
          white-space:nowrap;transition:background .15s;letter-spacing:.2px}
@@ -605,7 +619,10 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
     <div class="logo-mark">A</div>
     <span class="logo-name">Akamai</span>
   </div>
-  <div class="header-pill">AI Content Optimization &middot; Live Demo</div>
+  <div class="header-right">
+    <a class="spike-link" href="/spike" title="Prioritized-delivery spike — skinny / prioritized HTML for AI bots (telco track)">Prioritized delivery lab &rarr;</a>
+    <div class="header-pill">AI Content Optimization &middot; Live Demo</div>
+  </div>
 </header>
 
 <div class="hero">
@@ -690,6 +707,11 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
              placeholder="https://stopwaitingshipit.com/"
              value="https://stopwaitingshipit.com/" />
       <button class="run-btn" id="run-btn" onclick="runPipeline()">&#9654;&nbsp; Run Live Demo</button>
+      <button class="flush-btn" id="flush-btn" type="button" onclick="flushCache()" title="Clear this URL from Harper so the next run re-renders it fresh">&#8635;&nbsp; Flush cache</button>
+    </div>
+    <div class="flush-row">
+      <span class="flush-status" id="flush-status"></span>
+      <a href="#" id="flush-all" class="flush-all" onclick="flushCache(true);return false;" title="Clear every cached page in Harper — a full reset before a demo">flush all &rarr;</a>
     </div>
   </div>
 
@@ -1231,7 +1253,7 @@ function loadFixtures() {
             document.querySelectorAll('.fixture-btn').forEach(function(b) {
               b.classList.remove('active');
             });
-            if (selectedFixture && selectedFixture.file === page.file) {
+            if (selectedFixture && selectedFixture.label === page.label) {
               selectedFixture = null; // toggle off
             } else {
               btn.classList.add('active');
@@ -1251,6 +1273,31 @@ function loadFixtures() {
       show('fixture-bar');
     })
     .catch(function() {});
+}
+
+// Flush Harper's cache so a re-run re-renders fresh. flushCache() clears the URL
+// currently in the box; flushCache(true) clears every cached page (full reset).
+function flushCache(all) {
+  var s = document.getElementById('flush-status');
+  var body, label;
+  if (all) { body = { all: true }; label = 'all cached pages'; }
+  else {
+    var url = document.getElementById('target-url').value.trim();
+    if (!url) { s.className = 'flush-status err'; s.textContent = 'Enter a URL first.'; return; }
+    body = { url: url }; label = 'this URL';
+  }
+  var btn = document.getElementById('flush-btn');
+  if (btn) btn.disabled = true;
+  s.className = 'flush-status'; s.textContent = 'Flushing ' + label + '…';
+  fetch('/cache-clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (btn) btn.disabled = false;
+      if (d.error || d.ok === false) { s.className = 'flush-status err'; s.textContent = 'Flush failed: ' + (d.error || '?'); return; }
+      s.className = 'flush-status ok';
+      s.textContent = 'Cleared ' + d.cleared + ' cached page(s)' + (d.jobsCleared ? (' + ' + d.jobsCleared + ' render jobs') : '') + ' — the next run re-renders fresh.';
+    })
+    .catch(function (e) { if (btn) btn.disabled = false; s.className = 'flush-status err'; s.textContent = 'Flush failed: ' + e.message; });
 }
 
 var STEPS = [

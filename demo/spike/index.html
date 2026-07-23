@@ -11,6 +11,9 @@
   .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 60px}
   header.hero{background:linear-gradient(120deg,#022f5b,#00558C);color:#fff;border-radius:16px;padding:26px 28px;margin-bottom:22px}
   .eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#9fd4f5}
+  .eyebrow-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .back-link{font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:none;color:#cfe6fa;text-decoration:none;padding:4px 12px;border-radius:999px;border:1px solid #ffffff33;transition:color .12s,border-color .12s,background .12s}
+  .back-link:hover{color:#fff;border-color:#ffffff66;background:#ffffff14}
   h1{font-size:26px;margin:6px 0 8px}
   header.hero p{margin:0;max-width:860px;color:#dbeafe;line-height:1.55;font-size:15px}
   .spike-tag{display:inline-block;margin-top:12px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#ffffff22;border:1px solid #ffffff44;color:#fff;padding:3px 10px;border-radius:999px}
@@ -82,7 +85,10 @@
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="eyebrow">Content negotiation at the edge · thought-leadership spike</div>
+    <div class="eyebrow-row">
+      <div class="eyebrow">Content negotiation at the edge · thought-leadership spike</div>
+      <a class="back-link" href="/">&larr; Back to the demo</a>
+    </div>
     <h1>Prioritized delivery — who's asking decides which HTML they get</h1>
     <p>One URL. The edge inspects <strong>who's asking</strong> and routes each visitor to the right payload: a <strong>person</strong> and <strong>search crawlers</strong> get the full page; <strong>AI crawlers</strong> get <strong>skinny</strong> HTML (chrome stripped); <strong>answer engines</strong> get <strong>prioritized</strong> HTML (chrome stripped <em>and</em> the answer hoisted first). Each variant is derived from a per-<em>template</em> config — 50 configs → 375k pages — and the routing mirrors the edge's <code>crawler-policy</code>.</p>
     <span class="spike-tag">Spike · derived in-process · sample: fictional telco support page</span>
