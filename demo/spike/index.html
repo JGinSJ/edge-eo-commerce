@@ -21,6 +21,16 @@
   .hint{font-size:12.5px;color:var(--muted);margin:2px 0 22px}
   .policy{font-size:12px;color:var(--muted);background:#eef4fb;border:1px solid #dbe8f6;border-radius:9px;padding:9px 13px;margin:0 0 20px}
   .policy b{color:#334155}
+  .ai-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:0 0 22px}
+  .ai-btn{background:linear-gradient(120deg,#7c3aed,#00558C);color:#fff;border:0;padding:9px 16px;border-radius:9px;font-weight:700;cursor:pointer;font-size:13px}
+  .ai-btn:disabled{opacity:.5;cursor:default}
+  .ai-status{font-size:12.5px}
+  .ai-status.err{color:#c0392b}
+  .ai-card{border:1px solid #e6d9fb;background:linear-gradient(180deg,#fbf9ff,#fff)}
+  .ai-model{font-size:12px;font-weight:600;color:var(--muted)}
+  .ai-src-head{border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;margin-top:16px;padding:11px 16px;display:flex;justify-content:space-between;align-items:center}
+  .ai-src-head .t{font-weight:700;font-size:13px}
+  #ai-src{margin:0;border:1px solid var(--line);border-radius:0 0 12px 12px;height:360px;overflow:auto;padding:14px 16px;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;background:#0b1020;color:#c8d3e6;white-space:pre-wrap;word-break:break-word}
   .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
   .tile{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px 18px}
   .tile .lab{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
@@ -88,6 +98,12 @@
     <b>Routing policy</b> &nbsp;·&nbsp; 👤 Person → full live page &nbsp;·&nbsp; 🔍 Search (Googlebot, Bingbot) → full HTML &nbsp;·&nbsp; 🤖 AI crawler (ClaudeBot, GPTBot, Google-Extended) → skinny &nbsp;·&nbsp; ✨ Answer engine (Perplexity, OAI-SearchBot) → prioritized
   </div>
 
+  <div class="ai-bar">
+    <span>Deterministic variants above need a per-template config. Or let <strong>Claude generate the grounding layer for any page</strong> — no config, no marker:</span>
+    <button id="ai-run" type="button" class="ai-btn">✨ Auto-prioritize with AI</button>
+    <span class="ai-status" id="ai-status"></span>
+  </div>
+
   <div id="err" class="err" style="display:none"></div>
 
   <div class="tiles" id="tiles" style="display:none">
@@ -142,6 +158,30 @@
       <div class="chips" id="chips"></div>
       <pre id="bot">–</pre>
     </div>
+  </div>
+
+  <div class="card ai-card" id="ai-card" style="display:none">
+    <h2>✨ AI-generated grounding layer <span class="ai-model" id="ai-model"></span></h2>
+    <p class="sub">Claude read the raw page, found the answer, stripped the chrome, and rewrote it answer-first — <strong>no per-template config, no marker, works on any URL</strong>. This is the "we generate it" path (vs. ingesting the customer's artifact); in production it's pre-generated and cached, not run at serve time.</p>
+    <div class="tiles">
+      <div class="tile">
+        <div class="lab">Answer sits at token</div>
+        <div class="val"><span class="big" id="ai-ans-o">–</span><span class="arrow">→</span><span class="big to" id="ai-ans-g">–</span></div>
+        <span class="delta" id="ai-ans-d"></span>
+      </div>
+      <div class="tile">
+        <div class="lab">Total tokens</div>
+        <div class="val"><span class="big" id="ai-tok-o">–</span><span class="arrow">→</span><span class="big to" id="ai-tok-g">–</span></div>
+        <span class="delta" id="ai-tok-d"></span>
+      </div>
+      <div class="tile">
+        <div class="lab">Payload</div>
+        <div class="val"><span class="big" id="ai-by-o">–</span><span class="arrow">→</span><span class="big to" id="ai-by-g">–</span></div>
+        <span class="delta" id="ai-by-d"></span>
+      </div>
+    </div>
+    <div class="ai-src-head"><span class="t">✨ What Claude generated (grounding-layer HTML)</span><span class="b v-prioritized" id="ai-badge">Prioritized · AI</span></div>
+    <pre id="ai-src">–</pre>
   </div>
 </div>
 
@@ -252,6 +292,39 @@
       })
       .catch(function (e) { btn.disabled = false; $('err').style.display = ''; $('err').textContent = 'Request failed: ' + e.message; });
   }
+
+  // ── LLM auto-prioritizer (generate the grounding layer for any page) ──────
+  function renderAi(d) {
+    var o = d.original, g = d.generated;
+    $('ai-card').style.display = '';
+    $('ai-model').textContent = d.model ? ('· ' + d.model + ' · ' + (d.elapsedMs / 1000).toFixed(1) + 's') : '';
+    $('ai-ans-o').textContent = fmt(o.answerAt);
+    $('ai-ans-g').textContent = fmt(g.answerAt);
+    $('ai-ans-d').textContent = (o.answerAt && g.answerAt) ? (Math.round(o.answerAt / g.answerAt) + '× closer to the answer')
+      : (g.answerAt != null ? 'answer hoisted to the top' : '');
+    $('ai-tok-o').textContent = fmt(o.tokens); $('ai-tok-g').textContent = fmt(g.tokens);
+    $('ai-tok-d').textContent = xFold(o.tokens, g.tokens) + ' fewer · ' + pctSmaller(o.tokens, g.tokens);
+    $('ai-by-o').textContent = kb(o.bytes); $('ai-by-g').textContent = kb(g.bytes);
+    $('ai-by-d').textContent = pctSmaller(o.bytes, g.bytes);
+    $('ai-src').textContent = g.html;
+    $('ai-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function runAi() {
+    var btn = $('ai-run'), st = $('ai-status');
+    btn.disabled = true;
+    st.className = 'ai-status';
+    st.textContent = '⏳ Claude is reading the page and rewriting it… (usually 10–30s)';
+    fetch('/spike/auto-prioritize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: ($('url').value || '').trim() }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        btn.disabled = false;
+        if (d.error) { st.className = 'ai-status err'; st.textContent = d.error; return; }
+        st.textContent = '';
+        renderAi(d);
+      })
+      .catch(function (e) { btn.disabled = false; st.className = 'ai-status err'; st.textContent = 'Request failed: ' + e.message; });
+  }
+  $('ai-run').addEventListener('click', runAi);
 
   $('run').addEventListener('click', run);
   $('url').addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });

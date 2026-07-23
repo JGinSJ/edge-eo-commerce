@@ -22,6 +22,15 @@ And the **routing**: a "who's asking?" selector maps each visitor to a variant v
 policy that mirrors the edge `crawler-policy` — 👤 person / 🔍 search → full HTML,
 🤖 AI crawler → skinny, ✨ answer engine → prioritized. One URL, negotiated at the edge.
 
+**LLM auto-prioritizer** (✨ button): the deterministic transforms need a per-template
+config. The auto-prioritizer removes that dependency — Claude reads a raw page, finds
+the answer, strips chrome, and rewrites it answer-first, with **no config, no marker,
+on any URL**. This is the "we generate the grounding layer" path (vs. ingesting the
+customer's artifact); in production it's pre-generated + cached, not run at serve time.
+Uses `@anthropic-ai/sdk` (Opus 4.8, adaptive thinking, structured output, streamed) —
+needs `ANTHROPIC_API_KEY` (or an `ant` profile) on the demo host; degrades to a clear
+message if absent.
+
 Sample = a fat, **fictional** telco support page (`telco-support-sample.html`,
 "how to take a screenshot") where the answer is buried under mega-menus/promos/footer,
 and (inside the article) behind a marketing intro + table-of-contents.
@@ -37,7 +46,8 @@ AKAMAI_STAGING=1 npm start      # then open http://localhost:8099/spike
 ```
 
 Leave the URL blank for the sample, or paste any URL to skinnify it live (the
-"test on business.company.com" story).
+"test on business.company.com" story). For the **✨ Auto-prioritize with AI** button,
+set `ANTHROPIC_API_KEY` (or `ant auth login`) on the host first.
 
 ## Files
 
@@ -48,7 +58,13 @@ Leave the URL blank for the sample, or paste any URL to skinnify it live (the
   375k pages; this is the scale story in miniature. Uses `cheerio`.
 - `index.html` — the standalone `/spike` UI: 3-row token ruler + tiles + before/after
   panes, with a **"who's asking?" bot selector** (client-side `ROUTING` policy) that
-  re-routes the bot pane + highlights the matching ruler row.
+  re-routes the bot pane + highlights the matching ruler row, plus the **✨ Auto-prioritize
+  with AI** button + result card.
+- `skinnify.js` also exports `extractContent()` — config-free generic content extraction
+  (strip chrome by tag, keep `main`/`article`, cap length) to bound the LLM input and run
+  on arbitrary real pages.
+- `auto-prioritize.js` — the LLM grounding-layer generator (`@anthropic-ai/sdk`, Opus 4.8,
+  adaptive thinking, structured output, streamed). Endpoint `POST /spike/auto-prioritize`.
 - Wired into `../server.js` via two routes: `GET /spike`, `POST /spike/skinnify`
   (`{url?}` → returns `original`, `skinny`, `prioritized`, each `{bytes,tokens,answerAt,html}`).
 

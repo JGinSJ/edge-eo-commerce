@@ -9,6 +9,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.113.0",
     "cheerio": "^1.2.0",
     "tiktoken": "^1.0.21",
     "turndown": "^7.2.4"

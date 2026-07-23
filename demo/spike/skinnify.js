@@ -90,4 +90,32 @@ function transform(html, cfg = telcoSupportTemplate, mode = 'skinny') {
 const skinnify = (html, cfg = telcoSupportTemplate) => transform(html, cfg, 'skinny');
 const prioritize = (html, cfg = telcoSupportTemplate) => transform(html, cfg, 'prioritized');
 
-module.exports = { skinnify, prioritize, transform, telcoSupportTemplate };
+// Generic, config-FREE content extraction — for ARBITRARY pages (no per-template
+// selectors). Strips scripts/styles/media + structural chrome by tag, keeps the
+// main content root, flattens, and caps length. Used to bound the input handed to
+// the LLM auto-prioritizer (see auto-prioritize.js) and to make the spike run on
+// real URLs the deterministic telco config wouldn't match.
+function extractContent(html, maxChars = 30000) {
+  const $ = load(html);
+  $('script, style, noscript, link, meta, svg, iframe, template').remove();
+  $('*').contents().filter((_, n) => n.type === 'comment').remove();
+  $('nav, header, footer, aside, form, img, picture, source, video').remove();
+
+  let $root = $('main').first();
+  if (!$root.length) $root = $('article').first();
+  if (!$root.length) $root = $('body');
+  if (!$root.length) $root = $.root();
+
+  $root.find('*').addBack().each((_, el) => {
+    if (!el.attribs) return;
+    for (const name of Object.keys(el.attribs)) {
+      if (name !== 'href') delete el.attribs[name];
+    }
+  });
+
+  let out = ($root.html() || '').replace(/\n{3,}/g, '\n\n').trim();
+  if (out.length > maxChars) out = out.slice(0, maxChars) + '\n<!-- …content truncated… -->';
+  return out;
+}
+
+module.exports = { skinnify, prioritize, transform, extractContent, escapeHtml, telcoSupportTemplate };

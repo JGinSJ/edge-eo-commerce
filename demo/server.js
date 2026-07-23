@@ -53,6 +53,7 @@ const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 // Prioritized-delivery spike (skinny HTML for AI bots) — see demo/spike/.
 // Isolated from the commerce demo; a separate thought-leadership track (telco).
 const { skinnify, prioritize } = require('./spike/skinnify.js');
+const { autoPrioritize } = require('./spike/auto-prioritize.js');
 const SPIKE_DIR = path.join(__dirname, 'spike');
 
 // ── Scenario config (Phase A) ────────────────────────────────────────────────
@@ -2069,6 +2070,49 @@ const server = http.createServer(async (req, res) => {
         } catch (err) {
             sendJSON(res, 500, { error: err.message });
         }
+        return;
+    }
+
+    // LLM auto-prioritizer — generate a "grounding layer" for ANY page with Claude
+    // (no per-template config, no marker). Opt-in (costs an API call); needs
+    // ANTHROPIC_API_KEY or an `ant` profile on the demo host.
+    if (req.method === 'POST' && req.url === '/spike/auto-prioritize') {
+        let body = '';
+        req.on('data', (c) => { body += c.toString(); });
+        req.on('end', async () => {
+            try {
+                const o = JSON.parse(body || '{}');
+                let source, sourceHtml;
+                if (o.url && /^https?:\/\//i.test(o.url)) {
+                    const raw = await fetchRaw(o.url);
+                    if (!raw.html) return sendJSON(res, 502, { error: 'Could not fetch ' + o.url + ' (status ' + raw.status + ')' });
+                    source = o.url; sourceHtml = raw.html;
+                } else {
+                    source = 'sample:telco-support'; sourceHtml = fs.readFileSync(path.join(SPIKE_DIR, 'telco-support-sample.html'), 'utf8');
+                }
+
+                const started = Date.now();
+                const { html, answerLead, sourceAnchor, model } = await autoPrioritize(sourceHtml, source);
+                const elapsedMs = Date.now() - started;
+
+                const at = (h, anchor) => { if (!anchor) return null; const i = h.indexOf(anchor); return i < 0 ? null : countTokens(h.slice(0, i)); };
+                const pack = (h, anchor) => ({ bytes: Buffer.byteLength(h), tokens: countTokens(h), answerAt: at(h, anchor), html: h });
+
+                sendJSON(res, 200, {
+                    source, model, elapsedMs, sourceAnchor, answerLead,
+                    original: pack(sourceHtml, sourceAnchor),
+                    generated: pack(html, answerLead),
+                });
+            } catch (err) {
+                const m = String(err && err.message || err);
+                const auth = /api[_ ]?key|authentication|ANTHROPIC_API_KEY|401|credential/i.test(m);
+                sendJSON(res, auth ? 400 : 500, {
+                    error: auth
+                        ? 'No Anthropic credentials on the demo host. Set ANTHROPIC_API_KEY (or run `ant auth login`) where the demo runs, then retry.'
+                        : m,
+                });
+            }
+        });
         return;
     }
 
