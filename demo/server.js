@@ -1198,8 +1198,12 @@ function renderHero() {
 
   // Request panel — identity reflects the specific bot chosen in this lane.
   var who = crawler ? meta.whoTmpl.replace('{L}', crawler.label) : meta.who;
+  // Accept row on every card. Search crawlers want HTML like a browser; the AI lane
+  // shows a Markdown-preferring Accept to make the content-negotiation story concrete
+  // (illustrative — the edge actually routes by bot identity, not by the Accept header).
+  var acceptVal = heroSel === 'ai' ? 'text/markdown, text/html;q=0.9, */*' : 'text/html, */*';
   var hdrs = crawler
-    ? [['User-Agent', crawler.ua], ['X-Verified-Bot', '<span class="' + crawler.hl + '">true</span>'], ['X-Bot-Kind', '<span class="' + crawler.hl + '">' + crawler.kind + '</span>']]
+    ? [['User-Agent', crawler.ua], ['Accept', acceptVal], ['X-Verified-Bot', '<span class="' + crawler.hl + '">true</span>'], ['X-Bot-Kind', '<span class="' + crawler.hl + '">' + crawler.kind + '</span>']]
     : [['User-Agent', 'Mozilla/5.0 &hellip; Chrome/121'], ['Accept', 'text/html, */*'], ['X-Verified-Bot', '&mdash;']];
   var hrows = hdrs.map(function(h){ return '<div class="wa-hdr"><span class="wa-hk">' + h[0] + '</span><span class="wa-hv">' + h[1] + '</span></div>'; }).join('');
   reqEl.innerHTML =
