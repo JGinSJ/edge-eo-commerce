@@ -287,9 +287,18 @@ async function runTests(targetUrl, fixtureFile, cfg = null) {
         : fetchTokenComparison(targetUrl, cfg);
 
     const botHeaders = {
+        'User-Agent': HERO_USER_AGENTS.claudebot,
         'X-Verified-Bot': 'true',
         'Pragma': 'akamai-x-cache-on'
     };
+
+    // Scenario A is the SAME crawler with no verified-bot header — what it is served
+    // today, before any of this is switched on. It is not a human visit: this request
+    // has always carried no bot headers, and the old "Human Visitor" label described
+    // the wrong thing. Sending the crawler UA (and only the UA) makes the card's claim
+    // literally true and makes A identical to the hero's "Today" panel, so flipping
+    // between the two tabs shows the same request twice.
+    const todayHeaders = { 'User-Agent': HERO_USER_AGENTS.claudebot };
 
     // Cold→warm mode (convert-cache): show a genuine first crawler served LIVE by the
     // edge fallback converter (B — not from Harper), then prerender into Harper and serve
@@ -303,7 +312,7 @@ async function runTests(targetUrl, fixtureFile, cfg = null) {
         // gives a clean live conversion for the first crawler.
         await new Promise((r) => setTimeout(r, 1500));
         const [testA, tokenData] = await Promise.all([
-            makeEdgeRequest(targetUrl, {}, cfg),
+            makeEdgeRequest(targetUrl, todayHeaders, cfg),
             tokenPromise
         ]);
         let testB = await makeEdgeRequest(targetUrl, botHeaders, cfg);    // cold → fermyon-fallback (live convert)
@@ -317,7 +326,7 @@ async function runTests(targetUrl, fixtureFile, cfg = null) {
     }
 
     const [testA, tokenData] = await Promise.all([
-        makeEdgeRequest(targetUrl, {}, cfg),
+        makeEdgeRequest(targetUrl, todayHeaders, cfg),
         tokenPromise
     ]);
     const testB = await makeEdgeRequest(targetUrl, botHeaders, cfg);
@@ -701,7 +710,7 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
 <div class="hero">
   <div class="hero-hook">Live Demo</div>
   <h1>Your Content, Optimized for AI &mdash; Automatically</h1>
-  <p>Enter any URL below to see Akamai serve the right content to the right audience in real time: standard pages for your visitors, and AI-optimized content for search crawlers &mdash; all at the edge, with no changes to your website.</p>
+  <p>Enter any URL below to see Akamai serve the right content to the right audience in real time: fully-rendered pages for search crawlers, text-optimized content for AI crawlers, and your page untouched for everyone else &mdash; all at the edge, with no changes to your website.</p>
 </div>
 
 <main>
@@ -772,7 +781,7 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
       <div class="wa-flow-arrow">&rarr;</div>
       <div class="wa-flow-step"><span class="wa-flow-n">2</span>EdgeWorker reads <code>who</code> is asking</div>
       <div class="wa-flow-arrow">&rarr;</div>
-      <div class="wa-flow-step"><span class="wa-flow-n">3</span>Serves HTML, Markdown, or the live shell</div>
+      <div class="wa-flow-step"><span class="wa-flow-n">3</span>Serves rendered HTML, text-optimized content, or the live shell</div>
     </div>
   </div><!-- /tab-hero -->
 
@@ -811,45 +820,50 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
   </div>
 
   <div id="results">
-    <div class="section-title">Live Results — Three Scenarios, One URL</div>
+    <!-- One axis across all three cards: the SAME crawler, three states of the
+         system. A is today. B is the edge doing the transformation. C is that
+         work being kept. B deliberately makes no caching claim — the whole point
+         of separating B from C is that Functions transforms and Harper persists;
+         letting B say "converts and caches" collapses the two. -->
+    <div class="section-title">One URL, one crawler — three states of the same request</div>
     <div class="test-cards">
 
       <div class="test-card test-a">
         <div class="card-stripe"></div>
         <div class="card-head">
-          <div class="card-step">Scenario A</div>
-          <div class="card-title">Human Visitor</div>
-          <div class="card-sub">A standard browser visits your page.<br>Nothing changes. No risk.</div>
+          <div class="card-step">A &middot; Today</div>
+          <div class="card-title">Nothing in the path</div>
+          <div class="card-sub">An AI crawler asks for your page.<br>It goes to origin and gets the shell.</div>
         </div>
         <div class="card-body" id="body-a"></div>
         <div class="card-desc">
-          Your visitors experience no difference whatsoever. The pipeline is completely invisible to humans.
+          No optimization anywhere in the request. The crawler waits on your origin and is handed the same markup a browser gets &mdash; except it never runs your JavaScript, so the page never actually says what you sell. This is the baseline every number below is measured against.
         </div>
       </div>
 
       <div class="test-card test-b">
         <div class="card-stripe"></div>
         <div class="card-head">
-          <div class="card-step">Scenario B</div>
-          <div class="card-title">AI Crawler &mdash; First Visit</div>
-          <div class="card-sub">An AI crawler arrives for the first time. Akamai converts and caches.</div>
+          <div class="card-step">B &middot; Akamai Functions</div>
+          <div class="card-title">Assembled at the edge</div>
+          <div class="card-sub">The edge builds a text-optimized version on the fly, in the request.</div>
         </div>
         <div class="card-body" id="body-b"></div>
         <div class="card-desc">
-          Akamai detects the AI crawler at the edge and automatically converts your page to AI-optimized content on the fly. The result is cached globally — no origin changes, no IT tickets, no sprint cycles needed.
+          Akamai Functions transforms the page at the edge, during the request &mdash; no origin changes, no release train. Content assembly is the capability here, and a text-optimized variant for AI crawlers is one use of it: the same machinery can assemble whatever a given audience should receive.
         </div>
       </div>
 
       <div class="test-card test-c">
         <div class="card-stripe"></div>
         <div class="card-head">
-          <div class="card-step">Scenario C</div>
-          <div class="card-title">AI Crawler &mdash; Return Visit</div>
-          <div class="card-sub">The same AI crawler comes back.<br>Served instantly. Origin untouched.</div>
+          <div class="card-step">C &middot; Cached</div>
+          <div class="card-title">Done once, not per crawler</div>
+          <div class="card-sub">The next crawler is served the stored variant.<br>Origin untouched.</div>
         </div>
         <div class="card-body" id="body-c"></div>
         <div class="card-desc">
-          Every return visit from an AI crawler is served straight from cache — converted once on the first visit, never reconverted. Your origin server receives zero additional load from crawlers, permanently, after that very first visit.
+          The variant from B is kept, so the work happens once rather than on every crawl. Every crawler after the first is served from the cache and your origin sees no additional load from them &mdash; permanently, after that first request.
         </div>
       </div>
 
@@ -861,7 +875,7 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
       <div class="metric-card">
         <div class="metric-val" id="m1-val">&mdash;</div>
         <div class="metric-label">Edge Processing Time</div>
-        <div class="metric-desc" id="m1-desc">Akamai intercepted the AI crawler at the edge and delivered AI-optimized Markdown — without touching your origin infrastructure.</div>
+        <div class="metric-desc" id="m1-desc">Akamai assembled a text-optimized version of the page at the edge and served it to the AI crawler — without touching your origin infrastructure.</div>
         <div class="metric-src">Measured live during this demo &middot; Scenario B</div>
       </div>
 
@@ -875,8 +889,8 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
 
       <div class="metric-card">
         <div class="metric-val" id="m3-val">&mdash;</div>
-        <div class="metric-label">conversion to visits</div>
-        <div class="metric-desc" id="m3-desc">One Markdown conversion at first crawler visit, served indefinitely from cache to every subsequent crawler.</div>
+        <div class="metric-label">assembly to visits</div>
+        <div class="metric-desc" id="m3-desc">Assembled once at the first crawler visit, then served from cache to every crawler that follows.</div>
         <div class="metric-src">Demonstrated live &middot; Scenarios B and C</div>
       </div>
 
@@ -921,7 +935,11 @@ function loadScenarios() {
     var wrap = document.getElementById('scenario-buttons');
     if (!wrap) return;
     wrap.innerHTML = '';
-    (d.scenarios || []).forEach(function(s){
+    // Scenarios that can't run (DNS cutover pending) are not rendered at all. They
+    // sit on a different axis from the A/B/C cards below, and a greyed pill invites
+    // the "what's that one?" detour mid-demo. They stay in scenarios.config.json —
+    // flip "live" back to true there and they reappear.
+    (d.scenarios || []).filter(function(s){ return s.live !== false; }).forEach(function(s){
       var live = s.live !== false;
       var b = document.createElement('button');
       b.type = 'button'; b.id = 'scn-' + s.id;
@@ -935,7 +953,11 @@ function loadScenarios() {
       b.onclick = function(){ selectScenario(s.id); };
       wrap.appendChild(b);
     });
-    selectScenario(d.default || (d.scenarios && d.scenarios[0] && d.scenarios[0].id));
+    // Only ever select a scenario that still has a pill — otherwise the selection
+    // highlights nothing and the Run button reads as disabled for no visible reason.
+    var selectable = (d.scenarios || []).filter(function(s){ return s.live !== false; });
+    var wanted = selectable.filter(function(s){ return s.id === d.default; })[0];
+    selectScenario((wanted && wanted.id) || (selectable[0] && selectable[0].id));
   }).catch(function(){});
 }
 function selectScenario(id) {
@@ -1556,11 +1578,12 @@ function flushCache(all) {
     .catch(function (e) { if (btn) btn.disabled = false; s.className = 'flush-status err'; s.textContent = 'Flush failed: ' + e.message; });
 }
 
+// Narrates the same three states the cards show: today, assembled, cached.
 var STEPS = [
-  'Simulating a standard visitor request…',
-  'AI crawler detected — optimizing content at the edge…',
-  'Caching optimized content globally…',
-  'AI crawler returns — checking the edge cache…',
+  'Asking as an AI crawler with nothing in the path…',
+  'AI crawler detected — assembling a text-optimized variant at the edge…',
+  'Storing the variant so it is built once, not per crawler…',
+  'AI crawler returns — checking the cache…',
   'Calculating results…'
 ];
 
@@ -1666,11 +1689,11 @@ function renderResults(d) {
   var bMarkdown = d.testB.contentType.includes('markdown');
   var cMarkdown = d.testC.contentType.includes('markdown');
 
-  // Metric 1: Edge processing time — how fast Akamai delivered AI-optimized content on first visit.
+  // Metric 1: Edge processing time — how fast Akamai assembled the variant on first visit.
   if (bMarkdown) {
     document.getElementById('m1-val').innerHTML = d.testB.responseTime + '<sup>ms</sup>';
     document.getElementById('m1-desc').textContent =
-      'The Akamai edge intercepted the AI crawler and delivered AI-optimized Markdown in ' +
+      'Akamai Functions assembled a text-optimized version of the page at the edge and served it in ' +
       d.testB.responseTime + 'ms — without touching your origin infrastructure.';
   } else {
     document.getElementById('m1-val').innerHTML = '<span style="font-size:26px;font-weight:800">Re-run</span>';
@@ -1688,7 +1711,7 @@ function renderResults(d) {
     document.getElementById('m2-tokens').textContent =
       fmtTokens(tokenData.htmlTokens) + ' tokens → ' + fmtTokens(tokenData.markdownTokens) + ' tokens';
     document.getElementById('m2-desc').textContent =
-      'AI models processed ' + fmtTokens(tokenData.markdownTokens) + ' tokens of clean Markdown — ' +
+      'AI models processed ' + fmtTokens(tokenData.markdownTokens) + ' tokens of text-optimized content — ' +
       'vs ' + fmtTokens(tokenData.htmlTokens) + ' tokens for the ' + pageLabel + ' HTML. ' +
       "That's " + mult + '× more token-efficient.';
     document.getElementById('m2-src').textContent = tokenData.fromFixture
@@ -1698,7 +1721,7 @@ function renderResults(d) {
     var bSize = d.testB.bodySize;
     document.getElementById('m2-val').innerHTML = fmtBytes(bSize);
     document.getElementById('m2-desc').textContent =
-      'AI models received ' + fmtBytes(bSize) + ' of clean, structured Markdown — ' +
+      'AI models received ' + fmtBytes(bSize) + ' of clean, structured text — ' +
       'free of layout markup, navigation, and rendering overhead that adds noise for AI parsers.';
   } else {
     document.getElementById('m2-val').innerHTML = '<span style="font-size:26px;font-weight:800">Re-run</span>';
@@ -1706,11 +1729,11 @@ function renderResults(d) {
       'Edge processing was not confirmed on this run. Run the demo again to see content efficiency results.';
   }
 
-  // Metric 3: 1→∞ conversion story — only confirmed when both B and C deliver markdown.
+  // Metric 3: 1→∞ story — only confirmed when both B and C deliver the variant.
   if (bMarkdown && cMarkdown) {
     document.getElementById('m3-val').innerHTML = '1<sup>→ ∞</sup>';
     document.getElementById('m3-desc').textContent =
-      'One Markdown conversion at first crawler visit, served indefinitely from cache to every subsequent crawler.';
+      'Assembled once at the first crawler visit, then served from cache to every crawler that follows.';
   } else {
     document.getElementById('m3-val').innerHTML = '<span style="font-size:26px;font-weight:800">Re-run</span>';
     document.getElementById('m3-desc').textContent =
@@ -1734,16 +1757,18 @@ function renderCard(id, t, scenario, htmlSize, tokenData, coldWarm) {
   if (scenario === 'a') {
     edgeRow = statRow('Edge Processing', badge('Origin passthrough', 'b-bypass'));
   } else if (scenario === 'b') {
+    // B is the ASSEMBLY card and says nothing about caching — that is C's job, and
+    // conflating them is what made the two cards read as one story.
     edgeRow = statRow('Edge Processing',
-      coldWarm           ? badge('Converted live at the edge', 'b-miss')
+      coldWarm           ? badge('Assembled live at the edge', 'b-miss')
       : harperHit        ? badge('Served from cache', 'b-hit')
-      : t.xWasmExecution ? badge('Markdown conversion + cached', 'b-miss')
+      : t.xWasmExecution ? badge('Assembled live at the edge', 'b-miss')
       :                    badge('Not Confirmed', 'b-miss'));
   } else if (scenario === 'c') {
     var cHit = (t.xCache || '').toUpperCase().includes('HIT');
     edgeRow = statRow('Edge Processing',
       (harperHit || cHit) ? badge('Served from cache', 'b-hit')
-      : t.xWasmExecution  ? badge('Markdown conversion + cached', 'b-miss')
+      : t.xWasmExecution  ? badge('Assembled, then cached', 'b-miss')
       :                     badge('Not Confirmed', 'b-miss'));
   }
 
@@ -1827,11 +1852,11 @@ function renderCard(id, t, scenario, htmlSize, tokenData, coldWarm) {
   var coldNote = '';
   if (coldWarm && scenario === 'b') {
     coldNote = '<div style="font-size:11px;color:#a8a8aa;line-height:1.4;padding:2px 0 6px">' +
-      'First crawler &mdash; the page isn&rsquo;t prerendered yet, so Akamai Functions converts it live at the edge. ' +
-      'The return visit below is served from Harper cache.</div>';
+      'First crawler &mdash; nothing is stored yet, so Akamai Functions assembles the variant live at the edge. ' +
+      'The return visit below is served from cache.</div>';
   } else if (coldWarm && scenario === 'c') {
     coldNote = '<div style="font-size:11px;color:#a8a8aa;line-height:1.4;padding:2px 0 6px">' +
-      'Now prerendered into Harper &mdash; the return crawler is served straight from the Markdown cache.</div>';
+      'The variant is stored now &mdash; the return crawler is served straight from cache, with no assembly.</div>';
   }
 
   // Scenario C, prerender on a MISS: show the talk-track note instead of cache-state
@@ -1874,7 +1899,7 @@ function badge(text, cls) {
 }
 
 function ctBadge(ct, scenario) {
-  if (ct.includes('markdown'))                  return badge('AI‑Optimized Markdown', 'b-md');
+  if (ct.includes('markdown'))                  return badge('Text-optimized', 'b-md');
   if (ct.includes('html') && scenario === 'a')  return badge('Native HTML', 'b-html');
   if (ct.includes('html'))                      return badge('Standard HTML', 'b-html');
   if (scenario === 'a')                         return badge('Origin Response', 'b-bypass');
@@ -1887,6 +1912,10 @@ function cacheBadge(t, scenario) {
   // scenario has no Harper, so its only cache is the Akamai CDN (X-Cache).
   var harper = !!(scenarioFeatures && scenarioFeatures.harperCache);
   var sb = (t.xServedBy || '').toLowerCase();
+  // Scenario A has no verified-bot header, so the EdgeWorker never runs and Harper is
+  // never consulted. Reporting a "Cache Miss → Harper" there implies a lookup that did
+  // not happen — and contradicts the card, whose whole claim is nothing in the path.
+  if (scenario === 'a')                    return badge('No cache in path', 'b-bypass');
   if (/^harper-cache/.test(sb))            return badge('Harper Cache Hit', 'b-hit');
   if (harper && /fermyon|origin/.test(sb)) return badge('Cache Miss → Harper', 'b-miss');
   var v = (t.xCache || '').toUpperCase();   // CDN scenario / passthrough
@@ -1903,7 +1932,7 @@ function servedByBadge(t, scenario) {
   var s = (t.xServedBy || '').toLowerCase();
   var harper = !!(scenarioFeatures && scenarioFeatures.harperCache);
   if (s === 'harper-cache-html')                       return badge('Harper · prerendered HTML', 'b-html');
-  if (s === 'harper-cache-md' || s === 'harper-cache') return badge('Harper · cached Markdown', 'b-md');
+  if (s === 'harper-cache-md' || s === 'harper-cache') return badge('Harper · cached text variant', 'b-md');
   // fermyon-origin = the EW converted via Akamai Functions on a miss (write-through
   // scenarios also wrote it to Harper at that point; edge-convert just CDN-caches it).
   if (s === 'fermyon-origin')                          return badge(harper ? 'Akamai Functions · converted + written to Harper' : 'Akamai Functions · converted at edge', 'b-miss');
