@@ -694,15 +694,18 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
       <div class="wa-note" id="wa-note"></div>
     </div>
 
+    <!-- Lane order mirrors where the optimization actually pays: the search crawler
+         first, the AI crawler second, the person last (nothing changes for them —
+         that IS their story). Don't reorder without re-reading the talk track. -->
     <div class="wa-switch" id="wa-switch" role="tablist" aria-label="Choose a visitor">
-      <button class="wa-seg is-human active" type="button" data-c="human" onclick="heroSelect('human')">
-        <span class="wa-ico">&#128100;</span><span class="wa-seg-t">A person</span><span class="wa-seg-s">Chrome / Safari</span>
-      </button>
-      <button class="wa-seg is-search" type="button" data-c="search" onclick="heroSelect('search')">
+      <button class="wa-seg is-search active" type="button" data-c="search" onclick="heroSelect('search')">
         <span class="wa-ico">&#128269;</span><span class="wa-seg-t">Search crawler</span><span class="wa-seg-s">Search engines</span>
       </button>
       <button class="wa-seg is-ai" type="button" data-c="ai" onclick="heroSelect('ai')">
         <span class="wa-ico">&#129302;</span><span class="wa-seg-t">AI crawler</span><span class="wa-seg-s">AI assistants</span>
+      </button>
+      <button class="wa-seg is-human" type="button" data-c="human" onclick="heroSelect('human')">
+        <span class="wa-ico">&#128100;</span><span class="wa-seg-t">A person</span><span class="wa-seg-s">Chrome / Safari</span>
       </button>
     </div>
 
@@ -710,7 +713,7 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
 
     <div class="wa-inspector">
       <div class="wa-col wa-req" id="wa-req"></div>
-      <div class="wa-col wa-res lane-human" id="wa-res"></div>
+      <div class="wa-col wa-res lane-search" id="wa-res"></div>
     </div>
 
     <div class="wa-flow">
@@ -963,7 +966,7 @@ var HERO_CRAWLERS = {
     { kind: 'perplexitybot',   label: 'PerplexityBot',   hl: 'hlo', ua: 'Mozilla/5.0 (compatible; <span class="hlo">PerplexityBot</span>/1.0; +https://perplexity.ai/perplexitybot)' }
   ]
 };
-var heroSel = 'human';
+var heroSel = 'search';   // lead with the bots — see the .wa-switch comment
 var heroPick = { search: 'googlebot', ai: 'claudebot' };
 var heroCache = {};   // results keyed by kind ('human','googlebot',…) in store mode, by lane ('human','search','ai') in custom mode
 var heroBusy = {};    // key -> true while its fetch is in flight
@@ -1046,8 +1049,9 @@ function runHero() {
   heroRan = true;
   heroUrl = heroStoreUrl;   // fixed: the demo store (empty until /scenarios loads → server defaults to it)
   heroCache = {}; heroBusy = {};
-  // Prime the three default visitors (person + current search + current AI bot).
-  heroFetch(['human', heroPick.search, heroPick.ai]);
+  // Prime the three default visitors, bots first — the search lane is what the
+  // view lands on, so it should be the first request out the door.
+  heroFetch([heroPick.search, heroPick.ai, 'human']);
 }
 
 // ── Prerender another page (custom mode) ────────────────────────────────────
@@ -1072,7 +1076,7 @@ function heroBackToStore(e) {
   var c = document.getElementById('wa-custom'); if (c) c.style.display = 'none';
   var t = document.getElementById('wa-custom-toggle'); if (t) t.style.display = '';
   var b = document.getElementById('wa-custom-back'); if (b) b.style.display = 'none';
-  heroSetSeg('human');
+  heroSetSeg('search');   // back to the store = back to the lead lane
   runHero();
 }
 
