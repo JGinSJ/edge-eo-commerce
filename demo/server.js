@@ -50,6 +50,21 @@ enc.encode('warmup'); // pre-load WASM binary so the first demo run isn't slow
 const WASM_URL     = process.env.WASM_URL || 'https://bede2402-c4b7-4234-b17c-5e04fc46ef00.fwf.app';
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 
+// Real crawler User-Agents, mirroring HERO_CRAWLERS in the client. The hero used
+// to only DISPLAY these while sending no UA at all; the before/after flip makes
+// the UA load-bearing (the "before" is identified by the ABSENCE of the
+// verified-bot header, not by an absent UA), so we now put them on the wire.
+const HERO_USER_AGENTS = {
+    googlebot:          'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    bingbot:            'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+    claudebot:          'Mozilla/5.0 (compatible; ClaudeBot/1.0; +claudebot@anthropic.com)',
+    gptbot:             'Mozilla/5.0 (compatible; GPTBot/1.1; +https://openai.com/gptbot)',
+    'google-extended':  'Mozilla/5.0 (compatible; Google-Extended; +Google AI)',
+    'oai-searchbot':    'Mozilla/5.0 (compatible; OAI-SearchBot/1.0; +https://openai.com/searchbot)',
+    perplexitybot:      'Mozilla/5.0 (compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)',
+    human:              'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+};
+
 // Prioritized-delivery spike (skinny HTML for AI bots) — see demo/spike/.
 // Isolated from the commerce demo; a separate thought-leadership track (telco).
 const { skinnify, prioritize } = require('./spike/skinnify.js');
@@ -413,6 +428,36 @@ const HTML = `<!DOCTYPE html>
 .wa-chip.on{color:#fff;border-color:transparent}
 .wa-crawlers.lane-search .wa-chip.on{background:#00A4EB}
 .wa-crawlers.lane-ai .wa-chip.on{background:#FF8B00}
+/* Before/after flip. Sits above the inspector because it governs BOTH panels —
+   the request changes (no verified-bot header) as well as the response. */
+.wa-phase{display:flex;align-items:stretch;gap:10px;margin:0 0 18px}
+.wa-phase:empty{display:none}
+.wa-ph{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:10px 18px;
+       border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;text-align:left;
+       transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.wa-ph:hover{border-color:#cbd5e1}
+.wa-ph-t{font-size:14px;font-weight:700;color:#64748b}
+.wa-ph-s{font-size:11px;font-weight:600;color:#b0bcc9;font-family:ui-monospace,Menlo,monospace}
+.wa-ph.on{box-shadow:0 3px 12px rgba(0,0,0,.09)}
+.wa-ph.on .wa-ph-t{color:#002F6C}
+.wa-phase .wa-ph.on{border-color:#94a3b8;background:#f8fafc}
+.wa-phase.lane-search .wa-ph.on:last-child{border-color:#00A4EB;background:#f0f9ff}
+.wa-phase.lane-ai .wa-ph.on:last-child{border-color:#FF8B00;background:#fff8f0}
+.wa-ph-arrow{align-self:center;color:#cbd5e1;font-size:17px}
+.wa-absent{color:#b0bcc9;font-style:italic}
+/* Deltas are lane-framed (see heroDelta) — never a bare "% smaller", because the
+   search lane legitimately GROWS and a percentage would read as a regression. */
+.wa-deltarow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:-4px 0 14px}
+.wa-delta{font-size:13px;font-weight:800;padding:3px 10px;border-radius:999px;
+          background:#dcfce7;color:#166534;white-space:nowrap}
+.wa-delta-note{font-size:12.5px;color:#64748b;font-weight:600}
+.wa-facts{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #eef2f6}
+.wa-fact{display:flex;flex-direction:column;gap:1px;min-width:0}
+.wa-fact .fk{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#b0bcc9}
+.wa-fact .fv{font-size:13px;font-weight:700;color:#334155;font-family:ui-monospace,Menlo,monospace;
+             overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.wa-fact .fv.yes{color:#166534}
+.wa-fact .fv.no{color:#b45309}
 .wa-inspector{display:grid;grid-template-columns:minmax(0,0.92fr) minmax(0,1.08fr);gap:16px;margin-bottom:22px}
 .wa-col{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;border:1px solid #eef2f6}
 .wa-col-head{padding:12px 18px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
@@ -445,6 +490,9 @@ const HTML = `<!DOCTYPE html>
 .wa-res.lane-search .wa-callout{border-left-color:#00A4EB}
 .wa-res.lane-ai .wa-callout{border-left-color:#FF8B00}
 .wa-empty{padding:34px 18px;text-align:center;color:#94a3b8;font-size:14px}
+.wa-fail{padding:4px 0}
+.wa-fail-h{font-size:15px;font-weight:800;color:#b45309;margin-bottom:6px}
+.wa-fail-b{font-size:13px;color:#64748b;margin-bottom:10px}
 .wa-spin{display:inline-block;width:15px;height:15px;border:2px solid #cbd5e1;border-top-color:#00A4EB;
          border-radius:50%;animation:wa-rot .7s linear infinite;vertical-align:-2px;margin-right:8px}
 @keyframes wa-rot{to{transform:rotate(360deg)}}
@@ -711,6 +759,9 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
 
     <div class="wa-crawlers" id="wa-crawlers"></div>
 
+    <!-- Before/after flip, populated by renderHero(). Bot lanes only. -->
+    <div class="wa-phase" id="wa-phase"></div>
+
     <div class="wa-inspector">
       <div class="wa-col wa-req" id="wa-req"></div>
       <div class="wa-col wa-res lane-search" id="wa-res"></div>
@@ -934,21 +985,27 @@ function switchTab(which) {
 // visitor. We only vary WHO is asking (the bot headers); the EdgeWorker alone
 // decides what each is handed back. The segmented control picks the KIND of
 // visitor; the crawler chips pick the specific named bot within a lane.
+// Lane order here mirrors the segmented control: bots first, person last.
+// Each bot lane carries two callouts — what happens today, and what happens with
+// the edge doing the work. The person lane has one, because for them nothing
+// changes; that is the whole point and it is why they come last.
 var HERO_LANES = {
-  human: {
-    lane: 'human', icon: '👤', label: 'A person', sub: 'Chrome / Safari',
-    who: 'Someone browsing your store in <strong>Chrome or Safari</strong>. No bot signature &mdash; just a normal visitor.',
-    callout: 'No verified-bot header, so the EdgeWorker never fires. The person gets the raw single-page-app shell and their browser renders the product with JavaScript.'
-  },
   search: {
     lane: 'search', icon: '🔍', label: 'Search crawler', sub: 'Search engines',
     whoTmpl: '<strong>{L}</strong>, a verified search crawler indexing this page so it ranks in results.',
-    callout: 'A verified search crawler. The edge serves fully-rendered HTML &mdash; the same cached render a person&rsquo;s browser would produce &mdash; with JSON-LD structured data baked in. Nothing to execute, nothing missed.'
+    calloutBefore: 'Today the crawler is handed the same single-page-app shell a browser gets &mdash; but it does not run your JavaScript. The product never materialises: no name, no price, no structured data. That empty shell is what gets indexed.',
+    calloutAfter: 'The edge serves fully-rendered HTML &mdash; the same cached render a person&rsquo;s browser would produce &mdash; with JSON-LD structured data baked in. Nothing to execute, nothing missed.'
   },
   ai: {
     lane: 'ai', icon: '🤖', label: 'AI crawler', sub: 'AI assistants',
     whoTmpl: '<strong>{L}</strong>, a verified AI crawler reading this page to answer questions about your product.',
-    callout: 'A verified AI crawler. The edge serves clean Markdown from the same render &mdash; no navigation, ads, or scripts &mdash; a fraction of the tokens, so the model reads your product accurately and cheaply.'
+    calloutBefore: 'Today the model is handed the same shell &mdash; markup, scripts and empty containers it has to pay for and cannot learn anything from. It burns tokens reading a page that never says what you sell.',
+    calloutAfter: 'The edge serves clean text from the same render &mdash; no navigation, ads, or scripts &mdash; a fraction of the tokens, so the model reads your product accurately and cheaply.'
+  },
+  human: {
+    lane: 'human', icon: '👤', label: 'A person', sub: 'Chrome / Safari',
+    who: 'Someone browsing your store in <strong>Chrome or Safari</strong>. No bot signature &mdash; just a normal visitor.',
+    callout: 'No verified-bot header, so the EdgeWorker never fires. The person gets the raw single-page-app shell and their browser renders the product with JavaScript &mdash; exactly as it does today. Nothing about their experience changes.'
   }
 };
 // All search bots route to HTML, all AI bots to Markdown — the chips prove the
@@ -979,13 +1036,25 @@ var heroRan = false;
 var heroMode = 'store';
 var heroCustomUrl = '';
 var heroHarperReady = false;   // set from /scenarios — gates the "prerender another page" affordance
+// 'before' = what this visitor is served today (no verified-bot header, so the
+// EdgeWorker never fires). 'after' = with the edge doing the work. We LAND on
+// 'before' deliberately: the talk track is "here is what happens today", then
+// flip. The person lane pins to 'after' — it has no meaningful pair.
+var heroPhase = 'before';
 
 // http(s) URL test. Built via new RegExp so the backslashes survive the outer
 // HTML template literal (a slash-delimited regex literal here would be mangled).
 function isHttpUrl(u) { return new RegExp('^https?://', 'i').test(String(u == null ? '' : u)); }
 // In custom mode a page has ONE render, so every search bot shows the same HTML and
-// every AI bot the same Markdown — cache by lane. In store mode cache by exact kind.
-function heroCacheKey() { return heroMode === 'custom' ? heroSel : heroActiveKind(); }
+// every AI bot the same text — cache by lane. In store mode cache by exact kind.
+// Both are then suffixed with the phase, so a lane's before and after coexist.
+function heroCacheBase() { return heroMode === 'custom' ? heroSel : heroActiveKind(); }
+// The person lane pins to 'after': with no verified-bot header either way, its two
+// phases would be the same request. Showing a toggle there would imply a
+// difference that does not exist.
+function heroLanePhase() { return heroSel === 'human' ? 'after' : heroPhase; }
+function heroCacheKey() { return heroCacheBase() + '|' + heroLanePhase(); }
+function heroPairKeys(base) { base = base || heroCacheBase(); return [base + '|before', base + '|after']; }
 
 function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]; }); }
 
@@ -993,14 +1062,76 @@ function extractJsonLd(html) {
   if (!html) return null;
   // This runs inside the page's own inline JS block, so its source must never
   // contain the literal closing script tag (the HTML parser would end the block
-  // early and dump the rest of the JS onto the page). Build the tag name from
-  // parts and the regex via new RegExp; the \\ pairs survive the outer template
-  // literal as single-backslash regex metacharacters.
+  // early and dump the rest of the JS onto the page) — hence TAG built from parts.
+  //
+  // Escaping needs FOUR backslashes here, and the reason is worth spelling out:
+  // this file's HTML is an outer template literal, which turns \\ into \, and the
+  // result lands inside a SINGLE-QUOTED string in the emitted client JS, which
+  // eats another one. Two in source therefore reach the RegExp constructor as a
+  // bare 's' ('\s' is just an unrecognised string escape) — the pattern silently
+  // becomes [sS] and matches almost nothing. Four in source emit \\s, whose
+  // string value is \s, which is what RegExp must actually receive.
   var TAG = 'scr' + 'ipt';
-  var re = new RegExp('<' + TAG + '[^>]*application/ld\\+json[^>]*>([\\s\\S]*?)</' + TAG + '>', 'i');
+  var re = new RegExp('<' + TAG + '[^>]*application/ld\\\\+json[^>]*>([\\\\s\\\\S]*?)</' + TAG + '>', 'i');
   var m = html.match(re);
   if (!m) return null;
   try { return JSON.stringify(JSON.parse(m[1].trim()), null, 2); } catch (e) { return m[1].trim(); }
+}
+
+// What a payload actually SAYS, as opposed to how big it is. The shell's problem
+// is not its size — it is that a crawler reading it learns nothing. Three honest,
+// generic signals (no hard-coded product strings, so this holds up on a customer's
+// own URL in custom mode too). Same four-backslash rule as extractJsonLd.
+function heroPageFacts(body) {
+  if (!body) return null;
+  var TAG = 'scr' + 'ipt';
+  var text = String(body)
+    .replace(new RegExp('<' + TAG + '[^>]*>[\\\\s\\\\S]*?</' + TAG + '>', 'gi'), ' ')
+    .replace(new RegExp('<style[^>]*>[\\\\s\\\\S]*?</style>', 'gi'), ' ')
+    .replace(new RegExp('<!--[\\\\s\\\\S]*?-->', 'g'), ' ')
+    .replace(new RegExp('<[^>]+>', 'g'), ' ');
+  var words = text.split(new RegExp('\\\\s+')).filter(function(w){ return w.length > 1; });
+  var tm = String(body).match(new RegExp('<title[^>]*>([^<]*)', 'i'));
+  return {
+    title: tm ? tm[1].trim() : '',
+    words: words.length,
+    jsonLd: !!extractJsonLd(body)
+  };
+}
+
+// Deltas are framed PER LANE, and deliberately not as one generic "% smaller".
+// The AI lane shrinks, so a reduction reads correctly. The search lane GROWS —
+// the whole point is that content the crawler never had is now present — so a
+// percentage there would render the win as a regression.
+// A failed edge response still has a body — an error string — and that body is
+// tiny. Left ungated it computes as a magnificent token reduction: a broken
+// backend renders as the best possible result. Never derive a win from a
+// non-2xx response.
+function heroOk(r) { return !!r && !r.error && !(r.status >= 400); }
+
+function heroDelta(before, after, lane) {
+  if (!heroOk(before) || !heroOk(after)) return '';
+  var fb = heroPageFacts(before.sample), fa = heroPageFacts(after.sample);
+  if (lane === 'ai') {
+    var bt = before.tokens || 0, at = after.tokens || 0;
+    if (!bt || !at) return '';
+    var pct = Math.round((1 - (at / bt)) * 100);
+    if (pct <= 0) return '';
+    return '<span class="wa-delta good">&minus;' + pct + '% tokens</span>' +
+           '<span class="wa-delta-note">' + bt.toLocaleString() + ' &rarr; ' + at.toLocaleString() +
+           ' tokens for a page the model can actually read</span>';
+  }
+  if (lane === 'search') {
+    if (!fb || !fa) return '';
+    var gained = Math.max(0, fa.words - fb.words);
+    var bits = [];
+    if (gained) bits.push('+' + gained.toLocaleString() + ' words of real content');
+    if (fa.jsonLd && !fb.jsonLd) bits.push('JSON-LD structured data now present');
+    if (!bits.length) return '';
+    return '<span class="wa-delta good">Indexable</span>' +
+           '<span class="wa-delta-note">' + bits.join(' &middot; ') + '</span>';
+  }
+  return '';
 }
 
 function heroActiveKind() { return heroSel === 'human' ? 'human' : heroPick[heroSel]; }
@@ -1034,24 +1165,38 @@ function heroFetch(kinds) {
     });
 }
 
-// Make sure the currently-selected visitor has been fetched, then render.
+// Make sure the currently-selected visitor has been fetched, then render. We fetch
+// BOTH phases of a lane, never just the visible one — flipping between them is the
+// core move of the talk track and must not stall on a spinner mid-sentence.
 function heroEnsure() {
   // Custom mode never re-fetches on selection — all lanes were captured by the
   // seed+poll cycle and cached by lane; selecting just re-renders.
   if (heroMode === 'custom') { renderHero(); return; }
-  var k = heroActiveKind();
-  if (heroUrl && !heroCache[k] && !heroBusy[k]) heroFetch([k]);
+  if (!heroUrl) { renderHero(); return; }
+  var want = heroSel === 'human' ? ['human|after'] : heroPairKeys();
+  var missing = want.filter(function(k){ return !heroCache[k] && !heroBusy[k]; });
+  if (missing.length) heroFetch(missing);
   else renderHero();
 }
 
 function runHero() {
   heroMode = 'store';       // "Run live" always returns to the locked store
   heroRan = true;
+  heroPhase = 'before';     // always re-land on "here is what happens today"
   heroUrl = heroStoreUrl;   // fixed: the demo store (empty until /scenarios loads → server defaults to it)
   heroCache = {}; heroBusy = {};
-  // Prime the three default visitors, bots first — the search lane is what the
-  // view lands on, so it should be the first request out the door.
-  heroFetch([heroPick.search, heroPick.ai, 'human']);
+  // Prime every panel the talk track touches, bots first: both phases of the two
+  // selected crawlers plus the person. Five requests, all in flight at once, so
+  // every flip after this is a cache read.
+  heroFetch(heroPairKeys(heroPick.search)
+    .concat(heroPairKeys(heroPick.ai))
+    .concat(['human|after']));
+}
+
+// Flip a bot lane between "today" and "with Akamai".
+function heroSetPhase(p) {
+  heroPhase = (p === 'before') ? 'before' : 'after';
+  heroEnsure();
 }
 
 // ── Prerender another page (custom mode) ────────────────────────────────────
@@ -1077,7 +1222,7 @@ function heroBackToStore(e) {
   var t = document.getElementById('wa-custom-toggle'); if (t) t.style.display = '';
   var b = document.getElementById('wa-custom-back'); if (b) b.style.display = 'none';
   heroSetSeg('search');   // back to the store = back to the lead lane
-  runHero();
+  runHero();              // resets heroPhase to 'before'
 }
 
 function heroRunCustomFromInput() {
@@ -1088,7 +1233,10 @@ function heroRunCustomFromInput() {
     if (note) { note.className = 'wa-note err'; note.textContent = 'Enter a full URL, e.g. https://example.com/'; }
     return;
   }
-  heroSetSeg('human');   // land on the "before" (the raw shell)
+  // Land on the lead lane showing its "before" — the raw shell. The flip to
+  // "after" then tells the same story the store does, on the customer's own page.
+  heroSetSeg('search');
+  heroPhase = 'before';
   var b = document.getElementById('wa-custom-back'); if (b) b.style.display = '';
   heroRunCustom(url);
 }
@@ -1103,10 +1251,10 @@ function heroCustomFail(msg) {
 function kbSize(n) { n = n || 0; return n >= 1024 ? (Math.round((n / 1024) * 10) / 10 + ' KB') : (n + ' B'); }
 
 function heroBeforeAfterSummary() {
-  var b = heroCache['human'] || {}, s = heroCache['search'] || {}, a = heroCache['ai'] || {};
+  var b = heroCache['human|after'] || {}, s = heroCache['search|after'] || {}, a = heroCache['ai|after'] || {};
   return 'Prerendered &#10003; &middot; <code>' + esc(heroCustomUrl) + '</code><br>' +
     '<span class="wa-ba">Raw shell ' + kbSize(b.bytes) + ' / ' + (b.tokens || 0).toLocaleString() + ' tok ' +
-    '&rarr; HTML for search ' + kbSize(s.bytes) + ' &middot; Markdown for AI ' + (a.tokens || 0).toLocaleString() + ' tok</span>';
+    '&rarr; HTML for search ' + kbSize(s.bytes) + ' &middot; text for AI ' + (a.tokens || 0).toLocaleString() + ' tok</span>';
 }
 
 // Seed a URL, show the "before" instantly, then poll until the render lands.
@@ -1116,7 +1264,7 @@ function heroRunCustom(url) {
   heroCustomUrl = url;
   heroUrl = url;
   heroCache = {};
-  heroBusy = { human: true, search: true, ai: true };
+  heroBusy = { 'human|after': true, 'search|before': true, 'search|after': true, 'ai|before': true, 'ai|after': true };
   var note = document.getElementById('wa-note');
   if (note) { note.className = 'wa-note'; note.innerHTML = '<span class="wa-spin"></span>Fetching the raw page &amp; seeding the prerender&hellip;'; }
   renderHero();
@@ -1124,8 +1272,14 @@ function heroRunCustom(url) {
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (d.error) { heroCustomFail(d.error); return; }
-      heroCache['human'] = d.before;   // the "before" is ready immediately
-      heroBusy['human'] = false;
+      // One raw-origin fetch is the "before" for all three lanes: with no edge in
+      // front of an arbitrary URL, every visitor gets these same bytes today.
+      heroCache['human|after'] = d.before;
+      heroCache['search|before'] = d.before;
+      heroCache['ai|before'] = d.before;
+      heroBusy['human|after'] = false;
+      heroBusy['search|before'] = false;
+      heroBusy['ai|before'] = false;
       renderHero();
       if (note) {
         note.className = 'wa-note';
@@ -1144,18 +1298,18 @@ function heroPollCustom(url, tries) {
     .then(function(d){
       if (heroMode !== 'custom' || heroCustomUrl !== url) return;   // user navigated away
       if (d.ready) {
-        heroCache['search'] = d.search;
-        heroCache['ai'] = d.ai;
-        heroBusy['search'] = false; heroBusy['ai'] = false;
+        heroCache['search|after'] = d.search;
+        heroCache['ai|after'] = d.ai;
+        heroBusy['search|after'] = false; heroBusy['ai|after'] = false;
         var note = document.getElementById('wa-note');
         if (note) { note.className = 'wa-note'; note.innerHTML = heroBeforeAfterSummary(); }
         renderHero();
         return;
       }
       if (tries >= 28) {   // ~70s
-        heroBusy['search'] = false; heroBusy['ai'] = false;
+        heroBusy['search|after'] = false; heroBusy['ai|after'] = false;
         var note2 = document.getElementById('wa-note');
-        if (note2) { note2.className = 'wa-note err'; note2.innerHTML = 'The render is taking longer than expected &mdash; the renderer may be busy. The HTML/Markdown lanes will fill once it lands; try selecting them again in a moment.'; }
+        if (note2) { note2.className = 'wa-note err'; note2.innerHTML = 'The render is taking longer than expected &mdash; the renderer may be busy. The optimized lanes will fill once it lands; try selecting them again in a moment.'; }
         renderHero();
         return;
       }
@@ -1165,6 +1319,9 @@ function heroPollCustom(url, tries) {
 }
 
 function heroSelect(lane) {
+  // Every lane restarts at "today" — the talk track runs the same before/after
+  // beat per visitor, so landing a new lane already flipped would skip its setup.
+  if (lane !== heroSel) heroPhase = 'before';
   heroSel = lane;
   var segs = document.querySelectorAll('#wa-switch .wa-seg');
   for (var i = 0; i < segs.length; i++) segs[i].classList.toggle('active', segs[i].getAttribute('data-c') === lane);
@@ -1183,7 +1340,8 @@ function renderHero() {
   var chipsEl = document.getElementById('wa-crawlers');
   if (!reqEl || !resEl) return;
   var kind = heroActiveKind();          // the specific bot — drives request identity + chips
-  var cacheKey = heroCacheKey();        // where this lane's result lives (kind in store mode, lane in custom mode)
+  var phase = heroLanePhase();          // 'before' | 'after' ('after' always, on the person lane)
+  var cacheKey = heroCacheKey();        // where this lane+phase result lives
   var crawler = heroSel === 'human' ? null : heroCrawler(heroSel, kind);
 
   // Crawler chips — only for lanes that have a named set.
@@ -1200,15 +1358,44 @@ function renderHero() {
     }
   }
 
+  // Before/after flip — bot lanes only (see heroLanePhase).
+  var phaseEl = document.getElementById('wa-phase');
+  if (phaseEl) {
+    if (heroSel === 'human') {
+      phaseEl.className = 'wa-phase';
+      phaseEl.innerHTML = '';
+    } else {
+      phaseEl.className = 'wa-phase lane-' + meta.lane;
+      phaseEl.innerHTML =
+        '<button type="button" class="wa-ph' + (phase === 'before' ? ' on' : '') + '" onclick="heroSetPhase(\\'before\\')">' +
+          '<span class="wa-ph-t">Today</span><span class="wa-ph-s">no edge in front</span></button>' +
+        '<span class="wa-ph-arrow">&rarr;</span>' +
+        '<button type="button" class="wa-ph' + (phase === 'after' ? ' on' : '') + '" onclick="heroSetPhase(\\'after\\')">' +
+          '<span class="wa-ph-t">With Akamai</span><span class="wa-ph-s">edge serves the variant</span></button>';
+    }
+  }
+
   // Request panel — identity reflects the specific bot chosen in this lane.
   var who = crawler ? meta.whoTmpl.replace('{L}', crawler.label) : meta.who;
   // Accept row on every card. Search crawlers want HTML like a browser; the AI lane
   // shows a Markdown-preferring Accept to make the content-negotiation story concrete
   // (illustrative — the edge actually routes by bot identity, not by the Accept header).
   var acceptVal = heroSel === 'ai' ? 'text/markdown, text/html;q=0.9, */*' : 'text/html, */*';
-  var hdrs = crawler
-    ? [['User-Agent', crawler.ua], ['Accept', acceptVal], ['X-Verified-Bot', '<span class="' + crawler.hl + '">true</span>'], ['X-Bot-Kind', '<span class="' + crawler.hl + '">' + crawler.kind + '</span>']]
-    : [['User-Agent', 'Mozilla/5.0 &hellip; Chrome/121'], ['Accept', 'text/html, */*'], ['X-Verified-Bot', '&mdash;']];
+  // The two phases send the SAME User-Agent and differ by exactly one thing: the
+  // verified-bot header. Rendering its absence as an em-dash rather than hiding
+  // the row keeps that single difference on screen, which is the mechanism.
+  var hdrs;
+  if (crawler) {
+    hdrs = [['User-Agent', crawler.ua], ['Accept', acceptVal]];
+    if (phase === 'after') {
+      hdrs.push(['X-Verified-Bot', '<span class="' + crawler.hl + '">true</span>']);
+      hdrs.push(['X-Bot-Kind', '<span class="' + crawler.hl + '">' + crawler.kind + '</span>']);
+    } else {
+      hdrs.push(['X-Verified-Bot', '<span class="wa-absent">&mdash; not identified</span>']);
+    }
+  } else {
+    hdrs = [['User-Agent', 'Mozilla/5.0 &hellip; Chrome/121'], ['Accept', 'text/html, */*'], ['X-Verified-Bot', '&mdash;']];
+  }
   var hrows = hdrs.map(function(h){ return '<div class="wa-hdr"><span class="wa-hk">' + h[0] + '</span><span class="wa-hv">' + h[1] + '</span></div>'; }).join('');
   reqEl.innerHTML =
     '<div class="wa-col-head"><span>The request</span><span>' + meta.icon + ' ' + (crawler ? crawler.label : meta.label) + '</span></div>' +
@@ -1224,21 +1411,30 @@ function renderHero() {
   var servedLabel = (r && !r.error) ? (r.servedBy || (meta.lane === 'human' ? 'origin · shell' : '')) : '';
   var badge = servedLabel ? '<span class="wa-served">' + esc(servedLabel) + '</span>'
             : (busy ? '<span class="wa-served">&hellip;</span>' : '');
-  var servedHeadLabel = heroMode === 'custom'
-    ? (heroSel === 'human' ? 'The raw page (before)' : 'Prerendered from Harper (after)')
-    : 'What the edge served';
+  var servedHeadLabel;
+  if (heroSel === 'human') servedHeadLabel = heroMode === 'custom' ? 'The raw page' : 'What the edge served';
+  else if (phase === 'before') servedHeadLabel = 'What this crawler gets today';
+  else servedHeadLabel = heroMode === 'custom' ? 'With Akamai (prerendered)' : 'What the edge serves with Akamai';
   var head = '<div class="wa-col-head"><span>' + servedHeadLabel + '</span>' + badge + '</div>';
 
   var body;
   if (busy && !r) {
     var waitMsg = heroMode === 'custom'
-      ? (heroSel === 'human' ? 'Fetching the raw page&hellip;' : 'Prerendering with headless Chrome&hellip;')
+      ? (phase === 'before' ? 'Fetching the raw page&hellip;' : 'Prerendering with headless Chrome&hellip;')
       : 'Fetching from the edge&hellip;';
     body = '<div class="wa-col-body"><div class="wa-empty"><span class="wa-spin"></span>' + waitMsg + '</div></div>';
   } else if (!r) {
     body = '<div class="wa-col-body"><div class="wa-empty">Click <strong>Run live</strong> to run this against the edge.</div></div>';
   } else if (r.error) {
     body = '<div class="wa-col-body"><div class="wa-empty">Edge error: ' + esc(r.error) + '</div></div>';
+  } else if (r.status >= 400) {
+    // Surface the upstream failure as a failure. The body of a 5xx is an error
+    // string, and passing it off as a payload would show a broken backend as a
+    // dramatic size win.
+    body = '<div class="wa-col-body"><div class="wa-fail">' +
+      '<div class="wa-fail-h">The edge returned HTTP ' + r.status + '</div>' +
+      '<div class="wa-fail-b">This lane has no result to compare. The response body was:</div>' +
+      '<div class="wa-pre">' + esc((r.sample || '(empty)').slice(0, 600)) + '</div></div></div>';
   } else {
     var metrics =
       '<div class="wa-metrics">' +
@@ -1247,18 +1443,45 @@ function renderHero() {
       '<div class="wa-metric"><div class="mv">' + (r.tokens || 0).toLocaleString() + '</div><div class="ml">Tokens</div></div>' +
       '<div class="wa-metric"><div class="mv">' + (r.responseTime || 0) + 'ms</div><div class="ml">Edge time</div></div>' +
       '</div>';
+    // What the payload SAYS. On the "before" this is the whole point — the shell
+    // is not merely smaller, it is empty of anything a crawler could index.
+    var facts = heroPageFacts(r.sample);
+    var factsHtml = '';
+    if (facts) {
+      var chips = [
+        '<span class="wa-fact"><span class="fk">Title</span><span class="fv">' + (facts.title ? esc(facts.title) : '(none)') + '</span></span>',
+        '<span class="wa-fact"><span class="fk">Readable words</span><span class="fv">' + facts.words.toLocaleString() + '</span></span>',
+        '<span class="wa-fact"><span class="fk">Structured data</span><span class="fv' + (facts.jsonLd ? ' yes' : ' no') + '">' + (facts.jsonLd ? 'JSON-LD present' : 'none') + '</span></span>'
+      ];
+      factsHtml = '<div class="wa-facts">' + chips.join('') + '</div>';
+    }
+
+    // Delta belongs on the "after" only, so the "before" reads as a clean baseline.
+    var deltaHtml = '';
+    if (phase === 'after' && heroSel !== 'human') {
+      var pair = heroPairKeys();
+      var d = heroDelta(heroCache[pair[0]], heroCache[pair[1]], heroSel);
+      if (d) deltaHtml = '<div class="wa-deltarow">' + d + '</div>';
+    }
+
+    var callout = meta.callout || (phase === 'before' ? meta.calloutBefore : meta.calloutAfter);
+
     var content;
-    if (heroSel === 'ai') {
-      content = '<div class="wa-body-label">Markdown delivered to the model</div><div class="wa-pre">' + esc(r.sample || '(empty)') + '</div>';
-    } else if (heroSel === 'search') {
+    if (heroSel === 'human') {
+      content = '<div class="wa-body-label">Raw shell delivered to the browser (sample)</div><div class="wa-pre">' + esc((r.sample || '').slice(0, 2600)) + '</div>';
+    } else if (phase === 'before') {
+      // Both bot lanes get the identical shell today — show it as what it is.
+      content = '<div class="wa-body-label">What the crawler is handed today (sample)</div><div class="wa-pre">' + esc((r.sample || '').slice(0, 2600)) + '</div>';
+    } else if (heroSel === 'ai') {
+      content = '<div class="wa-body-label">Text delivered to the model</div><div class="wa-pre">' + esc(r.sample || '(empty)') + '</div>';
+    } else {
       var ld = extractJsonLd(r.sample);
       content = ld
         ? '<div class="wa-body-label">JSON-LD structured data (extracted from the served HTML)</div><div class="wa-pre">' + esc(ld) + '</div>'
         : '<div class="wa-body-label">Rendered HTML delivered to the crawler (sample)</div><div class="wa-pre">' + esc((r.sample || '').slice(0, 2600)) + '</div>';
-    } else {
-      content = '<div class="wa-body-label">Raw shell delivered to the browser (sample)</div><div class="wa-pre">' + esc((r.sample || '').slice(0, 2600)) + '</div>';
     }
-    body = '<div class="wa-col-body">' + metrics + '<div class="wa-callout">' + meta.callout + '</div>' + content + '</div>';
+    body = '<div class="wa-col-body">' + metrics + deltaHtml + factsHtml +
+           '<div class="wa-callout">' + callout + '</div>' + content + '</div>';
   }
   resEl.innerHTML = head + body;
 }
@@ -2089,8 +2312,17 @@ const server = http.createServer(async (req, res) => {
     // scenario), fetched live through the staging edge as one or more visitors.
     // We only vary WHO is asking (the bot headers); the EdgeWorker alone decides
     // what each is handed back — HTML for search crawlers, Markdown for AI
-    // crawlers, the raw shell for a person. `kinds` is a list of X-Bot-Kind
-    // values ('human' = no bot); results come back keyed by kind.
+    // crawlers, the raw shell for a person.
+    //
+    // `kinds` entries are "<kind>" or "<kind>|<phase>", phase being 'after'
+    // (default) or 'before'. Results come back keyed by the entry as sent.
+    //
+    //   after  — X-Verified-Bot: true + X-Bot-Kind, so the EdgeWorker fires and
+    //            serves the optimized representation out of Harper.
+    //   before — the SAME crawler User-Agent with no verified-bot header, so
+    //            makeEdgeRequest takes the non-bot path and the crawler gets the
+    //            raw CSR shell: what it is served today, measured for real
+    //            rather than asserted.
     if (req.method === 'POST' && req.url === '/hero-lane') {
         let body = '';
         req.on('data', (chunk) => { body += chunk.toString(); });
@@ -2102,15 +2334,22 @@ const server = http.createServer(async (req, res) => {
                     ? parsed.url
                     : ('https://' + cfg.host + '/');
                 const kinds = (Array.isArray(parsed.kinds) && parsed.kinds.length ? parsed.kinds : ['human'])
-                    .map(k => String(k)).slice(0, 8);
-                const settled = await Promise.all(kinds.map(async (kind) => {
-                    const headers = kind === 'human'
-                        ? {}
-                        : { 'X-Verified-Bot': 'true', 'X-Bot-Kind': kind };
+                    .map(k => String(k)).slice(0, 12);
+                const settled = await Promise.all(kinds.map(async (entry) => {
+                    const [kind, rawPhase] = entry.split('|');
+                    const phase = rawPhase === 'before' ? 'before' : 'after';
+                    // The UA goes on the wire for both phases so the two requests differ
+                    // by exactly one thing: the verified-bot header. That difference IS
+                    // the mechanism, so nothing else may vary between them.
+                    const ua = HERO_USER_AGENTS[kind] || HERO_USER_AGENTS.human;
+                    const headers = (kind === 'human' || phase === 'before')
+                        ? { 'User-Agent': ua }
+                        : { 'User-Agent': ua, 'X-Verified-Bot': 'true', 'X-Bot-Kind': kind };
                     try {
                         const r = await makeEdgeRequest(url, headers, cfg, 150000);
                         const served = r.bodyPreview || '';
-                        return [kind, {
+                        return [entry, {
+                            phase,
                             status: r.status,
                             servedBy: r.xServedBy || '',
                             contentType: r.contentType || '',
@@ -2120,7 +2359,7 @@ const server = http.createServer(async (req, res) => {
                             sample: served,
                         }];
                     } catch (err) {
-                        return [kind, { error: err.message }];
+                        return [entry, { phase, error: err.message }];
                     }
                 }));
                 sendJSON(res, 200, { url, scenario: cfg.ewScenario, results: Object.fromEntries(settled) });
