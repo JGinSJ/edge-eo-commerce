@@ -1,0 +1,614 @@
+<title>Prioritized Delivery for AI Answer Engines</title>
+<style>
+  :root{
+    --ground:#F6F8FA; --panel:#FFFFFF; --ink:#0A1A2F; --ink-2:#334A61;
+    --mute:#7B8B9A; --line:#DCE4EB;
+    --edge:#0089C7; --edge-soft:#E3F2FB;
+    --buried:#C96A00; --buried-soft:#FBEEDD;
+    --reached:#0E8C61; --reached-soft:#E1F4EC;
+    --rail:#E7EDF2;
+    --font-d:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-b:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-m:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#0B1620; --panel:#111F2C; --ink:#EAF2F8; --ink-2:#AFC2D2;
+      --mute:#7B8B9A; --line:#22394B;
+      --edge:#3FBDF2; --edge-soft:#10293A;
+      --buried:#F2A33C; --buried-soft:#2E2213;
+      --reached:#38C99A; --reached-soft:#0E2A22;
+      --rail:#1B2E3D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0B1620; --panel:#111F2C; --ink:#EAF2F8; --ink-2:#AFC2D2;
+    --mute:#7B8B9A; --line:#22394B;
+    --edge:#3FBDF2; --edge-soft:#10293A;
+    --buried:#F2A33C; --buried-soft:#2E2213;
+    --reached:#38C99A; --reached-soft:#0E2A22;
+    --rail:#1B2E3D;
+  }
+  :root[data-theme="light"]{
+    --ground:#F6F8FA; --panel:#FFFFFF; --ink:#0A1A2F; --ink-2:#334A61;
+    --mute:#7B8B9A; --line:#DCE4EB;
+    --edge:#0089C7; --edge-soft:#E3F2FB;
+    --buried:#C96A00; --buried-soft:#FBEEDD;
+    --reached:#0E8C61; --reached-soft:#E1F4EC;
+    --rail:#E7EDF2;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-b);
+       -webkit-font-smoothing:antialiased}
+
+  /* ── Deck shell ─────────────────────────────────────────────── */
+  .deck{position:relative;min-height:100svh}
+  .slide{display:none;min-height:100svh;padding:clamp(22px,3.6vw,52px) clamp(20px,6vw,88px) 74px;
+         flex-direction:column;justify-content:center;gap:clamp(13px,2vh,26px);max-width:1440px;margin:0 auto}
+  .slide.on{display:flex}
+  @media (prefers-reduced-motion:no-preference){
+    .slide.on{animation:rise .38s cubic-bezier(.2,.7,.3,1) both}
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ── Type ───────────────────────────────────────────────────── */
+  .eyebrow{font-family:var(--font-m);font-size:clamp(10px,1.05vw,12px);font-weight:600;
+           letter-spacing:.16em;text-transform:uppercase;color:var(--edge)}
+  .eyebrow.n{color:var(--mute)}
+  h1{font-family:var(--font-d);font-size:clamp(34px,6.4vw,78px);font-weight:800;line-height:1.02;
+     letter-spacing:-.035em;margin:0;text-wrap:balance;max-width:19ch}
+  h2{font-family:var(--font-d);font-size:clamp(26px,3.9vw,50px);font-weight:800;line-height:1.06;
+     letter-spacing:-.03em;margin:0;text-wrap:balance;max-width:22ch}
+  h3{font-family:var(--font-d);font-size:clamp(15px,1.5vw,19px);font-weight:750;letter-spacing:-.012em;margin:0}
+  .lede{font-size:clamp(15px,1.5vw,20px);line-height:1.6;color:var(--ink-2);max-width:62ch;margin:0}
+  p{margin:0}
+  strong{font-weight:700;color:var(--ink)}
+  .mono{font-family:var(--font-m);font-variant-numeric:tabular-nums}
+  .fill{border-bottom:2px dotted var(--edge);padding-bottom:1px;color:var(--edge)}
+
+  /* ── Token ruler: bar length = payload, marker = answer position ── */
+  .ruler{display:flex;flex-direction:column;gap:clamp(12px,2vh,20px)}
+  .rrow{display:grid;grid-template-columns:minmax(96px,140px) 1fr minmax(120px,180px);
+        align-items:center;gap:clamp(10px,1.6vw,22px)}
+  .rname{font-family:var(--font-m);font-size:clamp(10px,1.05vw,12.5px);font-weight:600;
+         letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+  .rtrack{position:relative;height:clamp(30px,4.4vh,44px);background:var(--rail);border-radius:4px}
+  /* Bar width (payload) and marker offset (answer position) are written as inline
+     styles on the elements themselves. They are the data — an indirection through a
+     custom property on the parent row buys nothing here and silently resolved to the
+     first row's value for every row, which made the chart wrong rather than merely
+     unanimated. Inline percentages cannot be overridden or mis-inherited. */
+  .rbar{position:absolute;top:0;bottom:0;left:0;border-radius:4px;background:var(--mute);opacity:.42}
+  .rrow.a .rbar{background:var(--buried)}
+  .rrow.b .rbar{background:var(--edge)}
+  .rrow.c .rbar{background:var(--reached)}
+  .rmark{position:absolute;top:-7px;bottom:-7px;width:3px;border-radius:2px;background:var(--ink)}
+  .rrow.a .rmark{background:var(--buried)}
+  .rrow.c .rmark{background:var(--reached)}
+  .rval{font-family:var(--font-m);font-variant-numeric:tabular-nums;font-size:clamp(11px,1.15vw,14px);
+        color:var(--ink-2);text-align:right;line-height:1.35}
+  .rval b{display:block;font-size:clamp(15px,1.7vw,21px);font-weight:700;color:var(--ink);letter-spacing:-.01em}
+  .raxis{display:flex;justify-content:space-between;font-family:var(--font-m);font-size:11px;
+         color:var(--mute);letter-spacing:.08em;padding-left:clamp(106px,calc(96px + 1.6vw),162px)}
+
+  /* ── Cards / grids ──────────────────────────────────────────── */
+  .grid{display:grid;gap:clamp(12px,1.6vw,20px)}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  @media(max-width:860px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+        padding:clamp(14px,1.7vw,22px);display:flex;flex-direction:column;gap:9px}
+  .card p{font-size:clamp(13px,1.25vw,15px);line-height:1.55;color:var(--ink-2)}
+  .tag{font-family:var(--font-m);font-size:10.5px;font-weight:600;letter-spacing:.12em;
+       text-transform:uppercase;color:var(--mute)}
+  .stat{font-family:var(--font-d);font-size:clamp(28px,4.2vw,50px);font-weight:800;
+        letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+  .stat.e{color:var(--edge)} .stat.g{color:var(--reached)} .stat.w{color:var(--buried)}
+  .statlabel{font-size:clamp(12px,1.2vw,14px);color:var(--ink-2);line-height:1.45}
+
+  /* ── Routing table ──────────────────────────────────────────── */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+  table{border-collapse:collapse;width:100%;min-width:620px}
+  th,td{text-align:left;padding:clamp(9px,1.15vw,15px) clamp(11px,1.35vw,20px);
+        border-bottom:1px solid var(--line);font-size:clamp(12px,1.2vw,14.5px)}
+  th{font-family:var(--font-m);font-size:10.5px;font-weight:600;letter-spacing:.12em;
+     text-transform:uppercase;color:var(--mute)}
+  tr:last-child td{border-bottom:none}
+  td.who{font-family:var(--font-m);color:var(--ink)}
+  .pill{display:inline-block;font-family:var(--font-m);font-size:11px;font-weight:600;
+        padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .pill.full{background:var(--edge-soft);color:var(--edge)}
+  .pill.skin{background:var(--edge-soft);color:var(--edge)}
+  .pill.pri{background:var(--reached-soft);color:var(--reached)}
+  .pill.none{background:var(--rail);color:var(--mute)}
+
+  /* ── Architecture diagram ───────────────────────────────────── */
+  .diagram{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+           padding:clamp(10px,1.5vw,20px);overflow-x:auto;width:100%;max-width:1020px}
+  .diagram svg{display:block;width:100%;min-width:660px;height:auto}
+  .d-box{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+  .d-box.edge{stroke:var(--edge);stroke-width:2}
+  .d-box.cache{stroke:var(--reached);stroke-width:2}
+  .d-t{fill:var(--ink);font-family:var(--font-d);font-size:13px;font-weight:700;letter-spacing:-.01em}
+  .d-s{fill:var(--ink-2);font-family:var(--font-b);font-size:11px}
+  .d-m{fill:var(--mute);font-family:var(--font-m);font-size:9.5px;letter-spacing:.09em}
+  .d-line{stroke:var(--mute);stroke-width:1.5;fill:none}
+  .d-line.hot{stroke:var(--edge);stroke-width:2}
+  .d-line.dash{stroke-dasharray:5 4}
+  .d-zone{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:3 4}
+
+  .note{font-size:clamp(11.5px,1.1vw,13px);color:var(--mute);line-height:1.5;max-width:78ch}
+  .note code{font-family:var(--font-m);background:var(--rail);padding:1px 6px;border-radius:4px;
+             color:var(--ink-2);font-size:.94em}
+
+  ul.ticks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  ul.ticks li{position:relative;padding-left:22px;font-size:clamp(13px,1.25vw,15.5px);
+              line-height:1.55;color:var(--ink-2)}
+  ul.ticks li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:9px;
+                      border-radius:2px;background:var(--edge)}
+
+  /* ── Chrome: nav, counter ───────────────────────────────────── */
+  .hud{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;
+       justify-content:space-between;gap:16px;padding:14px clamp(16px,4vw,32px);
+       background:linear-gradient(to top,var(--ground) 62%,transparent);z-index:20}
+  .dots{display:flex;gap:7px;flex-wrap:wrap}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--line);border:none;padding:0;
+       cursor:pointer;transition:background .18s,transform .18s}
+  .dot:hover{background:var(--mute)}
+  .dot.on{background:var(--edge);transform:scale(1.35)}
+  .dot:focus-visible{outline:2px solid var(--edge);outline-offset:3px}
+  .count{font-family:var(--font-m);font-size:11.5px;letter-spacing:.14em;color:var(--mute);
+         font-variant-numeric:tabular-nums;white-space:nowrap}
+  .arrows{display:flex;gap:6px}
+  .arrow{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--panel);
+         color:var(--ink-2);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center}
+  .arrow:hover{border-color:var(--edge);color:var(--edge)}
+  .arrow:focus-visible{outline:2px solid var(--edge);outline-offset:2px}
+  .brandbar{position:fixed;top:0;left:0;right:0;height:3px;background:var(--edge);z-index:21;
+            transform-origin:0 50%;transform:scaleX(var(--prog,0));transition:transform .35s ease}
+
+  /* ── Print / PDF export ─────────────────────────────────────── */
+  @media print{
+    .hud,.brandbar{display:none}
+    .slide{display:flex!important;min-height:auto;page-break-after:always;padding:34px 30px;
+           max-width:none;justify-content:flex-start}
+    body{background:#fff}
+  }
+</style>
+
+<div class="brandbar" id="brandbar"></div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 ─ Title -->
+  <section class="slide on">
+    <div class="eyebrow">Akamai &middot; Edge Content Negotiation</div>
+    <h1>Prioritized delivery for AI answer engines</h1>
+    <p class="lede">Your support content is being read by machines that answer on your behalf.
+      This is how we control what they receive, in what order, and what it costs them to reach
+      the answer &mdash; without changing your site.</p>
+    <div class="grid g3" style="max-width:900px;margin-top:8px">
+      <div class="card"><span class="tag">Prepared for</span>
+        <h3><span class="fill">Client name</span></h3></div>
+      <div class="card"><span class="tag">Track</span><h3>Prioritized delivery</h3></div>
+      <div class="card"><span class="tag">Status</span><h3>Working mechanic</h3></div>
+    </div>
+  </section>
+
+  <!-- 2 ─ The shift -->
+  <section class="slide">
+    <div class="eyebrow">The shift</div>
+    <h2>Three audiences now read your support pages.</h2>
+    <div class="grid g3">
+      <div class="card">
+        <span class="tag">Audience 01</span><h3>People</h3>
+        <p>Arrive in a browser, get the full experience. Unchanged by everything in this deck.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Audience 02</span><h3>Search crawlers</h3>
+        <p>Index your pages so they rank. Well understood, well served, and not the problem here.</p>
+      </div>
+      <div class="card" style="border-color:var(--edge)">
+        <span class="tag" style="color:var(--edge)">Audience 03</span><h3>AI answer engines</h3>
+        <p>Read your pages to answer a customer's question <em>instead of</em> sending them to you.
+          What they extract becomes your brand's answer &mdash; accurate or not.</p>
+      </div>
+    </div>
+    <p class="lede">For the first two, the page is a destination. For the third, the page is
+      <strong>source material</strong>. That changes what "well delivered" means.</p>
+  </section>
+
+  <!-- 3 ─ The problem, measured -->
+  <section class="slide">
+    <div class="eyebrow">The problem</div>
+    <h2>The answer is buried under the page.</h2>
+    <p class="lede">A representative support article &mdash; "how do I take a screenshot" &mdash;
+      measured end to end. A model reads top-down and pays for every token on the way.</p>
+
+    <div class="ruler" id="ruler1">
+      <div class="rrow a">
+        <span class="rname">As published</span>
+        <div class="rtrack"><div class="rbar" style="width:100%"></div><div class="rmark" style="left:66.4%"></div></div>
+        <div class="rval"><b>7,460</b>answer at token 4,955</div>
+      </div>
+      <div class="raxis"><span>token 0</span><span>token 7,460</span></div>
+    </div>
+
+    <div class="grid g3">
+      <div class="card"><span class="tag">Before the answer</span>
+        <div class="stat w">4,955</div>
+        <div class="statlabel">tokens of cookie banner, mega-menu, promos, topic tiles,
+          breadcrumbs, a marketing intro and a table of contents.</div></div>
+      <div class="card"><span class="tag">The answer itself</span>
+        <div class="stat">4</div>
+        <div class="statlabel">steps. That is the entire thing the customer asked for.</div></div>
+      <div class="card"><span class="tag">Consequence</span>
+        <div class="stat">66%</div>
+        <div class="statlabel">of the page is consumed before the model reaches anything worth citing.</div></div>
+    </div>
+  </section>
+
+  <!-- 4 ─ Why it matters commercially -->
+  <section class="slide">
+    <div class="eyebrow">Why it matters to marketing</div>
+    <h2>Buried answers get summarised, not cited.</h2>
+    <div class="grid g2">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <ul class="ticks">
+          <li><strong>Context is finite.</strong> Every model has a budget. Pages that spend it on
+            navigation get truncated, and the truncated part is often your actual answer.</li>
+          <li><strong>Position is weight.</strong> What appears first is what gets treated as the
+            point of the page. Your intro is not your point.</li>
+          <li><strong>Wrong beats absent, badly.</strong> A model that half-reads a device support
+            page will still answer &mdash; confidently, and sometimes about the wrong handset.</li>
+          <li><strong>You already proved the content thesis.</strong> The open question was never
+            whether better-structured content works. It was how to deliver it at scale.</li>
+        </ul>
+      </div>
+      <div class="card" style="justify-content:center;gap:14px">
+        <span class="tag">Your PoC result</span>
+        <div class="stat g"><span class="fill">25&ndash;30% &rarr; 60%</span></div>
+        <div class="statlabel">citation accuracy, from restructuring content alone &mdash;
+          hand-built, on a limited set of pages.</div>
+        <p class="note" style="margin-top:6px">Everything that follows is about doing that
+          across your estate, automatically, without a two-month content project per template.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 ─ What we do -->
+  <section class="slide">
+    <div class="eyebrow">The mechanic</div>
+    <h2>One URL. The edge decides what each visitor receives.</h2>
+    <p class="lede">The request arrives at Akamai before it reaches you. We identify the caller,
+      then serve the representation that suits them &mdash; from the same source content.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Who is asking</th><th>Identified by</th><th>Receives</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="who">A person</td><td class="d-s">no bot signal</td>
+              <td><span class="pill none">your site, untouched</span></td>
+              <td>Nothing changes. No risk to the customer experience.</td></tr>
+          <tr><td class="who">Googlebot, Bingbot</td><td class="d-s">verified bot signal</td>
+              <td><span class="pill full">full rendered HTML</span></td>
+              <td>Search indexers want the crawlable page and its structured data.</td></tr>
+          <tr><td class="who">ClaudeBot, GPTBot, Google&#8209;Extended</td><td class="d-s">verified bot signal</td>
+              <td><span class="pill skin">skinny</span></td>
+              <td>Ingesting for training. Chrome removed; original order kept.</td></tr>
+          <tr><td class="who">PerplexityBot, OAI&#8209;SearchBot</td><td class="d-s">verified bot signal</td>
+              <td><span class="pill pri">prioritized</span></td>
+              <td>Answering a question <em>right now</em>. Answer hoisted to the top.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Identity comes from Akamai Bot Manager's <em>verified</em> bot signal, not the
+      User&#8209;Agent string alone &mdash; a UA on its own is trivially spoofed. The policy is
+      configurable per property; this table is the default.</p>
+  </section>
+
+  <!-- 6 ─ The two transformations -->
+  <section class="slide">
+    <div class="eyebrow">The result</div>
+    <h2>Stripping the page is the obvious win. Reordering it is the free one.</h2>
+
+    <div class="ruler" id="ruler2">
+      <div class="rrow a">
+        <span class="rname">As published</span>
+        <div class="rtrack"><div class="rbar" style="width:100%"></div><div class="rmark" style="left:66.4%"></div></div>
+        <div class="rval"><b>7,460</b>answer @ 4,955</div>
+      </div>
+      <div class="rrow b">
+        <span class="rname">Skinny</span>
+        <div class="rtrack"><div class="rbar" style="width:12.9%"></div><div class="rmark" style="left:5.98%"></div></div>
+        <div class="rval"><b>961</b>answer @ 446</div>
+      </div>
+      <div class="rrow c">
+        <span class="rname">Prioritized</span>
+        <div class="rtrack"><div class="rbar" style="width:12.9%"></div><div class="rmark" style="left:1.02%"></div></div>
+        <div class="rval"><b>960</b>answer @ 76</div>
+      </div>
+      <div class="raxis"><span>token 0</span><span>token 7,460</span></div>
+    </div>
+
+    <div class="grid g3">
+      <div class="card"><span class="tag">Skinny</span>
+        <p>Chrome, scripts, styles and media removed. Content order untouched.
+          <strong>&minus;87% tokens.</strong></p></div>
+      <div class="card"><span class="tag">Prioritized</span>
+        <p>Everything skinny does, then the answer block is hoisted above the intro and
+          contents list. <strong>Answer 65&times; closer.</strong></p></div>
+      <div class="card" style="border-color:var(--reached)"><span class="tag" style="color:var(--reached)">The point</span>
+        <p>Skinny and prioritized are the <strong>same payload size</strong> &mdash; 3,953 bytes
+          each. Ordering costs nothing and moves the answer from token 446 to 76.</p></div>
+    </div>
+    <p class="note">Measured on a representative support-page structure, not yet on your live
+      templates. Establishing your own baseline is step one of the rollout.</p>
+  </section>
+
+  <!-- 7 ─ Architecture -->
+  <section class="slide">
+    <div class="eyebrow">Architecture</div>
+    <h2>Request path, build path.</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 940 392" role="img"
+           aria-label="Architecture diagram: a request path in which an answer engine reaches the Akamai edge, which verifies bot identity, applies routing policy and serves the matching variant from a variant cache, falling back to origin on a miss; and a separate build path in which source content is turned into variants ahead of time and written to that cache.">
+
+        <!-- ══ REQUEST PATH ══ -->
+        <text x="24" y="26" class="d-m">REQUEST PATH &mdash; MILLISECONDS, IN THE HOT PATH</text>
+        <rect x="24" y="40" width="892" height="128" rx="8" class="d-zone"/>
+
+        <rect x="42" y="66" width="150" height="78" rx="7" class="d-box"/>
+        <text x="60" y="94" class="d-t">Answer engine</text>
+        <text x="60" y="113" class="d-s">Perplexity, OAI-SearchBot,</text>
+        <text x="60" y="128" class="d-s">ClaudeBot, GPTBot&hellip;</text>
+
+        <path d="M192 105 H 268" class="d-line hot" marker-end="url(#ah-e)"/>
+        <text x="200" y="97" class="d-m">HTTPS</text>
+
+        <rect x="268" y="56" width="212" height="98" rx="7" class="d-box edge"/>
+        <text x="286" y="82" class="d-t">Akamai edge</text>
+        <text x="286" y="101" class="d-s">1 &middot; Verify bot identity</text>
+        <text x="286" y="118" class="d-s">2 &middot; Apply routing policy</text>
+        <text x="286" y="135" class="d-s">3 &middot; Select variant</text>
+
+        <path d="M480 105 H 556" class="d-line hot" marker-end="url(#ah-e)"/>
+        <text x="492" y="97" class="d-m">HIT</text>
+
+        <rect x="556" y="56" width="176" height="98" rx="7" class="d-box cache"/>
+        <text x="574" y="82" class="d-t">Variant cache</text>
+        <text x="574" y="101" class="d-s">full &middot; skinny &middot; prioritized</text>
+        <text x="574" y="118" class="d-s">keyed by url + device</text>
+        <text x="574" y="135" class="d-s">+ lang + variant</text>
+
+        <path d="M732 105 H 800" class="d-line dash" marker-end="url(#ah-m)"/>
+        <text x="740" y="97" class="d-m">MISS</text>
+        <rect x="800" y="70" width="116" height="70" rx="7" class="d-box"/>
+        <text x="818" y="98" class="d-t">Your origin</text>
+        <text x="818" y="117" class="d-s">unchanged</text>
+
+        <!-- ══ BUILD PATH ══ -->
+        <text x="24" y="212" class="d-m">BUILD PATH &mdash; AHEAD OF TIME, NEVER IN THE HOT PATH</text>
+        <rect x="24" y="226" width="892" height="150" rx="8" class="d-zone"/>
+
+        <rect x="42" y="264" width="150" height="76" rx="7" class="d-box"/>
+        <text x="60" y="291" class="d-t">Source content</text>
+        <text x="60" y="310" class="d-s">your CMS / origin</text>
+        <text x="60" y="326" class="d-s">templates</text>
+
+        <path d="M192 302 H 268" class="d-line" marker-end="url(#ah-m)"/>
+
+        <rect x="268" y="246" width="212" height="112" rx="7" class="d-box"/>
+        <text x="286" y="272" class="d-t">Variant builder</text>
+        <text x="286" y="292" class="d-s">A &middot; You supply the structured</text>
+        <text x="286" y="307" class="d-s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;version &mdash; we cache + serve it</text>
+        <text x="286" y="327" class="d-s">B &middot; We derive it from the page</text>
+        <text x="286" y="342" class="d-s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&mdash; rules, or model-generated</text>
+
+        <path d="M480 302 H 556" class="d-line" marker-end="url(#ah-g)"/>
+        <text x="490" y="294" class="d-m">WRITE</text>
+        <path d="M644 246 V 158" class="d-line" marker-end="url(#ah-g)"/>
+
+        <rect x="556" y="264" width="176" height="76" rx="7" class="d-box cache"/>
+        <text x="574" y="291" class="d-t">Variant cache</text>
+        <text x="574" y="310" class="d-s">one build,</text>
+        <text x="574" y="326" class="d-s">served indefinitely</text>
+
+        <rect x="800" y="264" width="116" height="76" rx="7" class="d-box"/>
+        <text x="818" y="291" class="d-t">50 template</text>
+        <text x="818" y="308" class="d-t">configs</text>
+        <text x="818" y="327" class="d-s">cover 375k pages</text>
+        <path d="M800 302 H 736" class="d-line dash" marker-end="url(#ah-m)"/>
+
+        <defs>
+          <marker id="ah-e" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+            <path d="M0 0 L9 4.5 L0 9 z" fill="var(--edge)"/></marker>
+          <marker id="ah-m" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+            <path d="M0 0 L9 4.5 L0 9 z" fill="var(--mute)"/></marker>
+          <marker id="ah-g" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+            <path d="M0 0 L9 4.5 L0 9 z" fill="var(--reached)"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="note">The two halves are deliberately separate. Building a variant is slow and can
+      involve a model; serving one is a cache read. <strong>No generation ever happens while a
+      crawler waits.</strong> Keeping the cached variant in step with the source is the third
+      concern &mdash; that is the next slide.</p>
+  </section>
+
+  <!-- 8 ─ Where variants come from -->
+  <section class="slide">
+    <div class="eyebrow">Producing the variants</div>
+    <h2>Two ways in. You are not committed to either.</h2>
+    <div class="grid g2">
+      <div class="card">
+        <span class="tag">Path A &mdash; you supply it</span>
+        <h3>Bring your own grounding layer</h3>
+        <p>You already know how to structure content for retrieval &mdash; that is what your PoC
+          proved. Your team or your agent produces the structured version; we ingest, cache,
+          route and keep it fresh.</p>
+        <p><strong>You keep editorial control.</strong> We are the delivery layer.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Path B &mdash; we derive it</span>
+        <h3>Generated from the page you already have</h3>
+        <p>Rules-based per template &mdash; roughly 50 configurations covering the estate &mdash;
+          or model-generated for the long tail where no template fits.</p>
+        <p><strong>No content project required</strong> to get a baseline live.</p>
+      </div>
+    </div>
+    <p class="lede">Most estates end up mixed: rules for the high-traffic templates, generation
+      for the tail, hand-authored for the pages that matter most commercially.</p>
+  </section>
+
+  <!-- 9 ─ Freshness -->
+  <section class="slide">
+    <div class="eyebrow">The hard part</div>
+    <h2>A cached variant must never outlive the page it came from.</h2>
+    <p class="lede">This is the objection worth spending time on, because a stale answer about
+      a tariff or a device is worse than no answer at all.</p>
+    <div class="grid g3">
+      <div class="card"><span class="tag">Event-driven</span><h3>Purge on publish</h3>
+        <p>Your CMS already emits a publish event. It invalidates the variant at the same moment
+          it invalidates the page. Same trigger, same instant.</p></div>
+      <div class="card"><span class="tag">Belt and braces</span><h3>Hash revalidation</h3>
+        <p>A background pass digests the source and compares. If the page changed without an
+          event firing, the variant rebuilds itself.</p></div>
+      <div class="card"><span class="tag">Never cached</span><h3>Live holes</h3>
+        <p>Volatile fields &mdash; price, stock, plan availability &mdash; are marked and fetched
+          at request time. They are never baked into a variant.</p></div>
+    </div>
+    <p class="note">The failure mode we design against is not "the cache is slightly behind." It is
+      "an answer engine confidently quotes a tariff you withdrew last quarter."</p>
+  </section>
+
+  <!-- 10 ─ Measurement -->
+  <section class="slide">
+    <div class="eyebrow">What you get to measure</div>
+    <h2>Bot traffic stops being a blind spot.</h2>
+    <p class="lede">The edge sees every one of these requests. That makes a category of reporting
+      possible that most teams currently do not have at all.</p>
+    <div class="grid g4">
+      <div class="card"><span class="tag">Who</span><h3>By engine</h3>
+        <p>Which answer engines crawl you, how often, and which sections they favour.</p></div>
+      <div class="card"><span class="tag">What</span><h3>By variant</h3>
+        <p>What each one was served, and the cache hit rate behind it.</p></div>
+      <div class="card"><span class="tag">Cost</span><h3>By payload</h3>
+        <p>Tokens and bytes delivered &mdash; the real unit of what you are handing over.</p></div>
+      <div class="card"><span class="tag">Health</span><h3>By status</h3>
+        <p>Errors, staleness, and any page whose variant failed to build.</p></div>
+    </div>
+    <p class="lede">For a marketing team this is the feedback loop: change the structure, watch
+      what the engines take, correlate with how your brand is being described.</p>
+  </section>
+
+  <!-- 11 ─ Proven vs to build -->
+  <section class="slide">
+    <div class="eyebrow">Where we actually are</div>
+    <h2>What is working today, and what is design.</h2>
+    <div class="grid g2">
+      <div class="card" style="border-color:var(--reached)">
+        <span class="tag" style="color:var(--reached)">Working, demonstrable now</span>
+        <ul class="ticks" style="margin-top:4px">
+          <li>Bot identification and per-engine routing at the edge</li>
+          <li>Both transformations, measured &mdash; the numbers in this deck are live output</li>
+          <li>Model-generated variants for pages with no template config</li>
+          <li>Variant caching, and serving the right one per request</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag">Designed, not yet built for you</span>
+        <ul class="ticks" style="margin-top:4px">
+          <li>CMS purge integration against your publishing pipeline</li>
+          <li>Hash revalidation at your estate's scale</li>
+          <li>The reporting surface described on the previous slide</li>
+          <li>Template configs derived from your actual page structures</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">We would rather be precise about this line than blur it. The mechanic is real;
+      the integration is scoped work.</p>
+  </section>
+
+  <!-- 12 ─ Rollout -->
+  <section class="slide">
+    <div class="eyebrow">Proposed next step</div>
+    <h2>Prove it on one section before it touches anything else.</h2>
+    <div class="grid g3">
+      <div class="card"><span class="tag">Step 01 &middot; weeks 1&ndash;2</span><h3>Baseline</h3>
+        <p>Measure your real templates as published: tokens, answer position, what the engines
+          currently receive. No changes yet.</p></div>
+      <div class="card"><span class="tag">Step 02 &middot; weeks 3&ndash;6</span><h3>One section, live</h3>
+        <p>Device support, or whichever section carries the most answerable questions.
+          Routing on, variants cached, freshness wired to your publish events.</p></div>
+      <div class="card"><span class="tag">Step 03 &middot; ongoing</span><h3>Measure, then widen</h3>
+        <p>Compare citation behaviour against the untouched sections. Expand template by
+          template on evidence.</p></div>
+    </div>
+    <div class="grid g2" style="margin-top:6px">
+      <div class="card" style="border-color:var(--edge)">
+        <span class="tag" style="color:var(--edge)">Why a section, not the estate</span>
+        <p>It bounds the blast radius, it gives you a clean control group, and it produces a
+          number you can defend internally before anyone commits budget to the rest.</p>
+      </div>
+      <div class="card">
+        <span class="tag">What we need from you</span>
+        <p>A section to target, read access to the templates, and whoever owns the publish
+          pipeline for thirty minutes.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <div class="count" id="count">01 / 12</div>
+  <div class="dots" id="dots"></div>
+  <div class="arrows">
+    <button class="arrow" id="prev" aria-label="Previous slide">&#8592;</button>
+    <button class="arrow" id="next" aria-label="Next slide">&#8594;</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var dots = document.getElementById('dots');
+    var count = document.getElementById('count');
+    var bar = document.getElementById('brandbar');
+    var i = 0;
+
+    slides.forEach(function (_, n) {
+      var b = document.createElement('button');
+      b.className = 'dot' + (n === 0 ? ' on' : '');
+      b.type = 'button';
+      b.setAttribute('aria-label', 'Go to slide ' + (n + 1));
+      b.addEventListener('click', function () { go(n); });
+      dots.appendChild(b);
+    });
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+    function go(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+      Array.prototype.forEach.call(dots.children, function (d, k) {
+        d.classList.toggle('on', k === i);
+      });
+      count.textContent = pad(i + 1) + ' / ' + pad(slides.length);
+      bar.style.setProperty('--prog', (i + 1) / slides.length);
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(i + 1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
+      else if (e.key === 'Home') { e.preventDefault(); go(0); }
+      else if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
+    });
+    document.getElementById('next').addEventListener('click', function () { go(i + 1); });
+    document.getElementById('prev').addEventListener('click', function () { go(i - 1); });
+
+    go(0);
+  })();
+</script>
