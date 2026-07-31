@@ -11,3 +11,10 @@ node_modules/
 
 # NOTE: edgeworker-bundle/bundle.tgz IS tracked on purpose — this repo exists to
 # carry the built EdgeWorker bundle so it can be uploaded to the new EW.
+
+# Customer-facing pitch material — kept out of the code repo. The generated
+# PowerPoint is build output; the HTML deck and its .pptx generator carry
+# client-specific copy and figures that get filled in per meeting.
+*.pptx
+demo/spike/customer-deck.html
+demo/spike/build-pptx.py
