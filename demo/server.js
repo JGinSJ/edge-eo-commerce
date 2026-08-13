@@ -1463,7 +1463,6 @@ function renderHero() {
       '<div class="wa-metric"><div class="mv">' + esc((r.contentType || '&mdash;').split(';')[0]) + '</div><div class="ml">Content-Type</div></div>' +
       '<div class="wa-metric"><div class="mv">' + (r.bytes || 0).toLocaleString() + '</div><div class="ml">Bytes</div></div>' +
       '<div class="wa-metric"><div class="mv">' + (r.tokens || 0).toLocaleString() + '</div><div class="ml">Tokens</div></div>' +
-      '<div class="wa-metric"><div class="mv">' + (r.responseTime || 0) + 'ms</div><div class="ml">Edge time</div></div>' +
       '</div>';
     // What the payload SAYS. On the "before" this is the whole point — the shell
     // is not merely smaller, it is empty of anything a crawler could index.
