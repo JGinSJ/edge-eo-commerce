@@ -1080,8 +1080,26 @@ function heroPairKeys(base) { base = base || heroCacheBase(); return [base + '|b
 
 function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]; }); }
 
-function extractJsonLd(html) {
+// The SAME schema.org object reaches both lanes — it is only spelled
+// differently. HTML carries it in a <script type="application/ld+json"> tag;
+// the Markdown variant carries it in a fenced json block. Matching only the
+// HTML spelling reported the AI lane as having no structured data, which read
+// as "the Markdown path drops your product schema" — the exact opposite of what
+// the payload shows. Detection is therefore format-aware.
+function extractJsonLd(html, contentType) {
   if (!html) return null;
+
+  if (/markdown/i.test(contentType || '')) {
+    // The fence is three backticks. This file's HTML is an outer template
+    // literal, so a literal backtick here would END it and break the page —
+    // build the delimiter from char codes instead.
+    var FENCE = String.fromCharCode(96, 96, 96);
+    var mre = new RegExp(FENCE + '[ \\\\t]*json[ \\\\t]*\\\\r?\\\\n([\\\\s\\\\S]*?)' + FENCE, 'i');
+    var mm = html.match(mre);
+    if (!mm) return null;
+    try { return JSON.stringify(JSON.parse(mm[1].trim()), null, 2); } catch (e) { return mm[1].trim(); }
+  }
+
   // This runs inside the page's own inline JS block, so its source must never
   // contain the literal closing script tag (the HTML parser would end the block
   // early and dump the rest of the JS onto the page) — hence TAG built from parts.
@@ -1104,8 +1122,9 @@ function extractJsonLd(html) {
 // is not its size — it is that a crawler reading it learns nothing. Three honest,
 // generic signals (no hard-coded product strings, so this holds up on a customer's
 // own URL in custom mode too). Same four-backslash rule as extractJsonLd.
-function heroPageFacts(body) {
+function heroPageFacts(body, contentType) {
   if (!body) return null;
+  var isMd = /markdown/i.test(contentType || '');
   var TAG = 'scr' + 'ipt';
   var text = String(body)
     .replace(new RegExp('<' + TAG + '[^>]*>[\\\\s\\\\S]*?</' + TAG + '>', 'gi'), ' ')
@@ -1113,11 +1132,16 @@ function heroPageFacts(body) {
     .replace(new RegExp('<!--[\\\\s\\\\S]*?-->', 'g'), ' ')
     .replace(new RegExp('<[^>]+>', 'g'), ' ');
   var words = text.split(new RegExp('\\\\s+')).filter(function(w){ return w.length > 1; });
-  var tm = String(body).match(new RegExp('<title[^>]*>([^<]*)', 'i'));
+  // Markdown has no <title>; its document title is the leading H1. Reading only
+  // the HTML spelling showed "(none)" on the AI lane for a payload that names
+  // the product on its first heading.
+  var tm = isMd
+    ? String(body).match(new RegExp('^[ \\\\t]*#[ \\\\t]+(.+?)[ \\\\t]*$', 'm'))
+    : String(body).match(new RegExp('<title[^>]*>([^<]*)', 'i'));
   return {
     title: tm ? tm[1].trim() : '',
     words: words.length,
-    jsonLd: !!extractJsonLd(body)
+    jsonLd: !!extractJsonLd(body, contentType)
   };
 }
 
@@ -1133,7 +1157,7 @@ function heroOk(r) { return !!r && !r.error && !(r.status >= 400); }
 
 function heroDelta(before, after, lane) {
   if (!heroOk(before) || !heroOk(after)) return '';
-  var fb = heroPageFacts(before.sample), fa = heroPageFacts(after.sample);
+  var fb = heroPageFacts(before.sample, before.contentType), fa = heroPageFacts(after.sample, after.contentType);
   if (lane === 'ai') {
     var bt = before.tokens || 0, at = after.tokens || 0;
     if (!bt || !at) return '';
@@ -1466,7 +1490,7 @@ function renderHero() {
       '</div>';
     // What the payload SAYS. On the "before" this is the whole point — the shell
     // is not merely smaller, it is empty of anything a crawler could index.
-    var facts = heroPageFacts(r.sample);
+    var facts = heroPageFacts(r.sample, r.contentType);
     var factsHtml = '';
     if (facts) {
       var chips = [
@@ -1496,7 +1520,7 @@ function renderHero() {
     } else if (heroSel === 'ai') {
       content = '<div class="wa-body-label">Text delivered to the model</div><div class="wa-pre">' + esc(r.sample || '(empty)') + '</div>';
     } else {
-      var ld = extractJsonLd(r.sample);
+      var ld = extractJsonLd(r.sample, r.contentType);
       content = ld
         ? '<div class="wa-body-label">JSON-LD structured data (extracted from the served HTML)</div><div class="wa-pre">' + esc(ld) + '</div>'
         : '<div class="wa-body-label">Rendered HTML delivered to the crawler (sample)</div><div class="wa-pre">' + esc((r.sample || '').slice(0, 2600)) + '</div>';
