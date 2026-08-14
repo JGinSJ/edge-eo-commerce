@@ -1080,6 +1080,15 @@ function heroPairKeys(base) { base = base || heroCacheBase(); return [base + '|b
 
 function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]; }); }
 
+// Where the Markdown variant keeps its schema.org object. The fence is three
+// backticks, which cannot appear literally in this file: the client JS lives
+// inside a template literal a backtick would end — hence char codes. Shared so
+// the extractor and the word count agree on exactly what the fence is.
+function mdJsonFenceRe(flags) {
+  var FENCE = String.fromCharCode(96, 96, 96);
+  return new RegExp(FENCE + '[ \\\\t]*json[ \\\\t]*\\\\r?\\\\n([\\\\s\\\\S]*?)' + FENCE, flags);
+}
+
 // The SAME schema.org object reaches both lanes — it is only spelled
 // differently. HTML carries it in a <script type="application/ld+json"> tag;
 // the Markdown variant carries it in a fenced json block. Matching only the
@@ -1090,12 +1099,7 @@ function extractJsonLd(html, contentType) {
   if (!html) return null;
 
   if (/markdown/i.test(contentType || '')) {
-    // The fence is three backticks. This file's HTML is an outer template
-    // literal, so a literal backtick here would END it and break the page —
-    // build the delimiter from char codes instead.
-    var FENCE = String.fromCharCode(96, 96, 96);
-    var mre = new RegExp(FENCE + '[ \\\\t]*json[ \\\\t]*\\\\r?\\\\n([\\\\s\\\\S]*?)' + FENCE, 'i');
-    var mm = html.match(mre);
+    var mm = html.match(mdJsonFenceRe('i'));
     if (!mm) return null;
     try { return JSON.stringify(JSON.parse(mm[1].trim()), null, 2); } catch (e) { return mm[1].trim(); }
   }
@@ -1126,7 +1130,13 @@ function heroPageFacts(body, contentType) {
   if (!body) return null;
   var isMd = /markdown/i.test(contentType || '');
   var TAG = 'scr' + 'ipt';
-  var text = String(body)
+  // Readable words means prose a reader reads. The HTML lane has always excluded
+  // its JSON-LD, because the blanket <script> strip below removes it — so leaving
+  // the Markdown fence in the count had the two lanes measuring different things,
+  // crediting the AI lane with a serialized object nobody reads. The schema is
+  // already reported on its own as "Structured data"; counting it here too would
+  // be counting it twice, in the one column that claims to be prose.
+  var text = (isMd ? String(body).replace(mdJsonFenceRe('gi'), ' ') : String(body))
     .replace(new RegExp('<' + TAG + '[^>]*>[\\\\s\\\\S]*?</' + TAG + '>', 'gi'), ' ')
     .replace(new RegExp('<style[^>]*>[\\\\s\\\\S]*?</style>', 'gi'), ' ')
     .replace(new RegExp('<!--[\\\\s\\\\S]*?-->', 'g'), ' ')
