@@ -1503,10 +1503,20 @@ function renderHero() {
     var facts = heroPageFacts(r.sample, r.contentType);
     var factsHtml = '';
     if (facts) {
+      // On the person lane an absent JSON-LD is not a deficit. Their browser
+      // runs the page's own JS, which injects the schema a moment later — the
+      // card reports the wire, and on this lane the wire is not the end state.
+      // Borrowing the crawler lanes' amber "none" made the three cards read as
+      // "people get the degraded version", the opposite of this lane's claim
+      // that nothing changes for them. Neutral weight, and named for where the
+      // schema actually comes from.
+      var isPerson = heroSel === 'human';
+      var sdText  = facts.jsonLd ? 'JSON-LD present' : (isPerson ? 'added by your JS' : 'none');
+      var sdClass = facts.jsonLd ? ' yes'            : (isPerson ? ''                 : ' no');
       var chips = [
         '<span class="wa-fact"><span class="fk">Title</span><span class="fv">' + (facts.title ? esc(facts.title) : '(none)') + '</span></span>',
         '<span class="wa-fact"><span class="fk">Readable words</span><span class="fv">' + facts.words.toLocaleString() + '</span></span>',
-        '<span class="wa-fact"><span class="fk">Structured data</span><span class="fv' + (facts.jsonLd ? ' yes' : ' no') + '">' + (facts.jsonLd ? 'JSON-LD present' : 'none') + '</span></span>'
+        '<span class="wa-fact"><span class="fk">Structured data</span><span class="fv' + sdClass + '">' + sdText + '</span></span>'
       ];
       factsHtml = '<div class="wa-facts">' + chips.join('') + '</div>';
     }
