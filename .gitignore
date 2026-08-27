@@ -17,8 +17,10 @@ node_modules/
 # copy and figures filled in per meeting. All still live on disk, just untracked.
 *.pptx
 demo/spike/customer-deck.html
-demo/spike/build-pptx.py
 demo/spike/architecture-slides.html
+# The .pptx generators, one per deck. Comment on its own line: a trailing '#'
+# is literal in .gitignore, so it would silently break the pattern.
+demo/spike/build-*.py
 
 # Personal working notes, surfaced in the ~/Projects daily-brief sweep. Same
 # file exists across sibling projects; it is a scratchpad, not project docs.
