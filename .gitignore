@@ -19,3 +19,7 @@ node_modules/
 demo/spike/customer-deck.html
 demo/spike/build-pptx.py
 demo/spike/architecture-slides.html
+
+# Personal working notes, surfaced in the ~/Projects daily-brief sweep. Same
+# file exists across sibling projects; it is a scratchpad, not project docs.
+NEXT.md
