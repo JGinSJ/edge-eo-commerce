@@ -640,18 +640,19 @@ main{max-width:1120px;margin:0 auto;padding:36px 24px 60px}
 .b-edge   {background:#e0f2fe;color:#0369a1}
 
 /* ── Metrics ── */
-.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+/* Two metrics since the edge-processing-time card was dropped. The nth-child
+   accents are renumbered with it, so "leaner content" keeps amber and "assembly
+   to visits" keeps navy — the same colours those claims carry on the cards. */
+.metrics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 .metric-card{background:#fff;border-radius:12px;padding:28px 24px;
              box-shadow:0 1px 3px rgba(0,0,0,.08);
-             border-top:4px solid #00A4EB}
-.metric-card:nth-child(2){border-top-color:#FF8B00}
-.metric-card:nth-child(3){border-top-color:#002F6C}
+             border-top:4px solid #FF8B00}
+.metric-card:nth-child(2){border-top-color:#002F6C}
 .metric-val{font-size:52px;font-weight:900;color:#002F6C;line-height:1;
             margin-bottom:10px}
 .metric-val sup{font-size:24px;font-weight:700;vertical-align:super;
-                line-height:0;color:#00A4EB}
-.metric-card:nth-child(2) .metric-val sup{color:#FF8B00}
-.metric-card:nth-child(3) .metric-val sup{color:#002F6C}
+                line-height:0;color:#FF8B00}
+.metric-card:nth-child(2) .metric-val sup{color:#002F6C}
 .metric-tokens{font-size:13px;font-weight:600;color:#9ca3af;margin-bottom:10px;
                letter-spacing:.01em;min-height:18px}
 .metric-label{font-size:16px;font-weight:800;color:#002F6C;margin-bottom:8px}
@@ -871,13 +872,6 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
 
     <div class="section-title" style="margin-top:8px">What This Means for Your Business</div>
     <div class="metrics-grid">
-
-      <div class="metric-card">
-        <div class="metric-val" id="m1-val">&mdash;</div>
-        <div class="metric-label">Edge Processing Time</div>
-        <div class="metric-desc" id="m1-desc">Akamai assembled a text-optimized version of the page at the edge and served it to the AI crawler — without touching your origin infrastructure.</div>
-        <div class="metric-src">Measured live during this demo &middot; Scenario B</div>
-      </div>
 
       <div class="metric-card">
         <div class="metric-val" id="m2-val">&mdash;</div>
@@ -1732,17 +1726,9 @@ function renderResults(d) {
   var bMarkdown = d.testB.contentType.includes('markdown');
   var cMarkdown = d.testC.contentType.includes('markdown');
 
-  // Metric 1: Edge processing time — how fast Akamai assembled the variant on first visit.
-  if (bMarkdown) {
-    document.getElementById('m1-val').innerHTML = d.testB.responseTime + '<sup>ms</sup>';
-    document.getElementById('m1-desc').textContent =
-      'Akamai Functions assembled a text-optimized version of the page at the edge and served it in ' +
-      d.testB.responseTime + 'ms — without touching your origin infrastructure.';
-  } else {
-    document.getElementById('m1-val').innerHTML = '<span style="font-size:26px;font-weight:800">Re-run</span>';
-    document.getElementById('m1-desc').textContent =
-      'Edge processing was not confirmed on this run. Run the demo again to see the result.';
-  }
+  // The edge-processing-time metric used to lead here. It was the only latency
+  // claim in a section whose argument is what each visitor is HANDED, and it
+  // invited the wrong comparison — the win is the payload, not the millisecond.
 
   // Metric 2: Token efficiency — cl100k_base HTML tokens vs Markdown tokens.
   // Falls back to Markdown payload size when token data is unavailable.
@@ -1856,17 +1842,9 @@ function renderCard(id, t, scenario, htmlSize, tokenData, coldWarm) {
               '(Use a fetch-friendly page to see the live conversion.)</div>';
   }
 
-  // Caveat below Response Time on Scenario B only — scenario-accurate:
-  //  • Harper hit (e.g. prerender): the render happened ahead of time, out of band;
-  //    a higher first-visit time is connection warm-up, not extra work.
-  //  • conversion (md-cache cold miss): the convert happens in parallel; repeats are faster.
-  var rtCaveat = scenario === 'b'
-    ? '<div style="font-size:11px;color:#a8a8aa;line-height:1.4;padding:2px 0 6px">' +
-      (harperHit
-        ? 'Served from the prerender cache — the page was rendered once, ahead of time. A higher first-visit time here is connection warm-up, not extra work.'
-        : 'First-visit conversion happens in parallel — cached responses are typically faster on repeat visits.') +
-      '</div>'
-    : '';
+  // The Scenario B caveat that used to sit here went with the Response Time row
+  // it explained: it existed only to stop a slower first visit reading as a
+  // penalty. With no time on the card there is nothing to excuse.
 
   // Write-through Scenario C (option A): the return visit is served from the exact
   // entry the first visit wrote — the write is confirmed (X-Cache-Write), so we
@@ -1882,7 +1860,6 @@ function renderCard(id, t, scenario, htmlSize, tokenData, coldWarm) {
       statRow('Served by', servedByBadge(t, scenario)) +
       writeRow +
       statRow('Response Size',  sizeStr) +
-      statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
       preview;
     return;
   }
@@ -1927,8 +1904,6 @@ function renderCard(id, t, scenario, htmlSize, tokenData, coldWarm) {
     statRow('Content Format', ctBadge(t.contentType, scenario)) +
     cacheBlock +
     statRow('Response Size',  sizeStr) +
-    statRow('Response Time',  '<strong>' + t.responseTime + 'ms</strong>') +
-    rtCaveat +
     preview;
 }
 
