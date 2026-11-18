@@ -16,6 +16,7 @@ import CacheKey from '../../src/util/CacheKey.js';
 import ExpiringMap from '../../src/util/ExpiringMap.js';
 import { calculateNextRefresh } from '../../src/util/time.js';
 import { toBuffer, deriveMarkdownFromGzippedHtml } from '../../src/util/markdown.js';
+import { tokenizeGzippedHtml, getRateSheet } from '../../src/util/rateInject.js';
 
 const NAMESPACE = 'render_jobs';
 
@@ -248,19 +249,29 @@ async function savePageContent(result) {
 		cb(null, result);
 	} else if (result.statusCode === 200) {
 		// Scheduled/async path: derive Markdown and persist both representations.
-		const md = deriveMarkdownFromGzippedHtml(htmlGzip);
-		await databases.prerender.PageCache.put({
-			cacheKey,
-			url: result.url,
-			deviceType: result.deviceType,
-			acceptLanguage: result.acceptLanguage,
-			headers: JSON.stringify(result.headers || {}),
-			statusCode: 200,
-			content: htmlGzip ? await createBlob(htmlGzip) : null,
-			markdownContent: md ? await createBlob(md.gzip) : null,
-			markdownLength: md ? md.length : null,
-			lastRefreshed: Date.now(),
-		});
+		// Rate pages are tokenized first, so the Markdown is derived from tokens too.
+		const rates = tokenizeGzippedHtml(htmlGzip, await getRateSheet());
+		if (rates.error) {
+			// A half-tokenized rate page would freeze a rate. Keep whatever is cached.
+			logger.error(`Rate tokenization failed for ${result.url}: ${rates.error}; render not cached`);
+		} else {
+			htmlGzip = rates.htmlGzip;
+			const md = deriveMarkdownFromGzippedHtml(htmlGzip);
+			await databases.prerender.PageCache.put({
+				cacheKey,
+				url: result.url,
+				deviceType: result.deviceType,
+				acceptLanguage: result.acceptLanguage,
+				headers: JSON.stringify(result.headers || {}),
+				statusCode: 200,
+				content: htmlGzip ? await createBlob(htmlGzip) : null,
+				markdownContent: md ? await createBlob(md.gzip) : null,
+				markdownLength: md ? md.length : null,
+				hasRateTokens: rates.hasRateTokens,
+				rateLeftovers: rates.rateLeftovers,
+				lastRefreshed: Date.now(),
+			});
+		}
 	}
 
 	// Update scheduling metadata for periodic refresh. On Harper 5.1.22 records returned

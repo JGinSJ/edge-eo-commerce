@@ -1,5 +1,12 @@
 {
   "default": "convert-cache",
+  "verticals": [
+    {"id":"commerce","label":"Commerce","noun":"product page","path":"/",
+     "ai":{"missing":"no price, no product details","gained":"the price and the structured data"}},
+    {"id":"finance","label":"Finance","noun":"rate page","path":"/finance/index.html",
+     "rate":{"product":"mortgage-30-fixed","label":"30-Year Fixed"},
+     "ai":{"missing":"no rate, no terms","gained":"the current rate and the structured data"}}
+  ],
   "scenarios": [
     {
       "id": "convert-cache",

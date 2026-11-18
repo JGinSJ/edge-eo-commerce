@@ -17,6 +17,7 @@ import zlib from 'node:zlib';
 import JobQueue from './JobQueue.js';
 import Sitemap from './Sitemap.js';
 import PageCache from './PageCache.js';
+import RateSheet from './RateSheet.js';
 import CacheKey from '../util/CacheKey.js';
 import { getAcceptedEncodings, getBestEncoding, reencode } from '../util/contentEncoding.js';
 import { sanitizeDeviceType } from '../util/deviceType.js';
@@ -24,10 +25,11 @@ import { BOT_PATH_PREFIX, MD_PATH_PREFIX, BOT_REQUEST_KEY_NAME, BOT_REQUEST_KEY 
 import { normalizeUrl } from '../util/url.js';
 import { render } from '../util/render.js';
 import { deriveMarkdownFromGzippedHtml } from '../util/markdown.js';
+import { getRateSheet, fillGzipped, applyRateHeaders, rateMissingResponse } from '../util/rateInject.js';
 
 // Exports /page_cache, /render_jobs, /sitemaps endpoints
 /** @type {object} */
-export { PageCache as page_cache, JobQueue as render_jobs, Sitemap as sitemaps };
+export { PageCache as page_cache, JobQueue as render_jobs, Sitemap as sitemaps, RateSheet as rate_sheet };
 
 /**
  * HTTP middleware to handle bot-driven `/page` requests.
@@ -147,6 +149,17 @@ server.http(
 
 					// Retrieve body (cached or origin response)
 					let body = page.content || request.originResponseData;
+
+					// Rate page: the cached HTML holds tokens. Fill them with the current
+					// rates; if any rate is missing, 503 so the edge falls back to origin.
+					if (page.hasRateTokens && page.content) {
+						const filled = await fillGzipped(page.content, await getRateSheet());
+						if (!filled.ok) return rateMissingResponse(filled.missing);
+						body = filled.gzip;
+						applyRateHeaders(responseHeaders, filled);
+						if (page.rateLeftovers != null) responseHeaders.set('x-rate-leftovers', String(page.rateLeftovers));
+					}
+
 					if (body) {
 						const contentEncoding = responseHeaders.get('content-encoding') || null;
 
@@ -298,6 +311,16 @@ server.http(
 				// markdownContent is stored gzip-compressed; re-encode only if the
 				// client cannot accept gzip.
 				let body = page.markdownContent;
+
+				// Rate page: fill the tokens in the cached Markdown (see /page above).
+				if (page.hasRateTokens) {
+					const filled = await fillGzipped(page.markdownContent, await getRateSheet());
+					if (!filled.ok) return rateMissingResponse(filled.missing);
+					body = filled.gzip;
+					applyRateHeaders(responseHeaders, filled);
+					responseHeaders.set('vary', 'Accept-Encoding');
+				}
+
 				const contentEncoding = 'gzip';
 				const bestEncoding = getBestEncoding(getAcceptedEncodings(request.headers.get('accept-encoding')), contentEncoding);
 

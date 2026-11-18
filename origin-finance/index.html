@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- NOTE: title/description/structured-data are intentionally generic here and
+       are filled in by app.js AFTER client-side render, along with every rate on
+       the page. A crawler that does not execute JS sees only this shell, with no
+       rates and no product copy. That gap is the reason to prerender. -->
+  <title>Loading… | Larkspur Bank</title>
+  <meta name="description" content="">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./index.html">Larkspur&nbsp;Bank</a>
+    <nav class="site-nav"><a href="./index.html">Home loans</a><a href="./index.html">Rates</a><a href="./index.html">Support</a></nav>
+  </header>
+
+  <!-- app root: empty until the client-side app renders into it -->
+  <main id="app" aria-busy="true">
+    <div class="skeleton" role="status" aria-live="polite">
+      <div class="spinner"></div>
+      <p>Loading today&rsquo;s rates…</p>
+    </div>
+  </main>
+
+  <noscript>
+    <p style="padding:2rem;text-align:center">
+      This site requires JavaScript to display current rates.
+    </p>
+  </noscript>
+
+  <footer class="site-footer">
+    Larkspur Bank is a fictional institution used for demonstration. Rates shown are sample data, not offers of credit.
+  </footer>
+
+  <script src="./app.js?v=2" defer></script>
+</body>
+</html>
