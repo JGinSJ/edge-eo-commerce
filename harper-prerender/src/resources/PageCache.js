@@ -20,6 +20,13 @@ import { render } from '../util/render.js';
 import CacheKey from '../util/CacheKey.js';
 import { toBuffer, deriveMarkdownFromGzippedHtml } from '../util/markdown.js';
 import { REQ_HEADERS_WHITELIST } from '../util/constants.js';
+import {
+	tokenizeGzippedHtml,
+	getRateSheet,
+	fillGzipped,
+	applyRateHeaders,
+	rateMissingResponse,
+} from '../util/rateInject.js';
 
 const pageSource = {
 	/**
@@ -67,15 +74,34 @@ const pageSource = {
 				priority: 0,
 			});
 
-			const statusCode = result.statusCode;
+			let statusCode = result.statusCode;
 			let responseHeaders = result.headers || {};
 			let content;
 			let markdownContent;
 			let markdownLength;
+			let hasRateTokens = false;
+			let rateLeftovers = null;
+			let htmlGzip = null;
 			if (statusCode === 200) {
 				// orchestrator.savePageContent forwards the buffered gzipped HTML on
 				// result.htmlGzip; fall back to the raw stream defensively.
-				const htmlGzip = result.htmlGzip ?? (result.stream != null ? await toBuffer(result.stream) : null);
+				htmlGzip = result.htmlGzip ?? (result.stream != null ? await toBuffer(result.stream) : null);
+
+				// Rate pages are tokenized before storing, so the Markdown derived
+				// below carries tokens too.
+				const rates = tokenizeGzippedHtml(htmlGzip, await getRateSheet());
+				if (rates.error) {
+					// A half-tokenized rate page would freeze a rate: treat as a failed render.
+					logger.error(`Rate tokenization failed for ${url}: ${rates.error}; render not cached`);
+					statusCode = 502;
+					htmlGzip = null;
+				} else {
+					htmlGzip = rates.htmlGzip;
+					hasRateTokens = rates.hasRateTokens;
+					rateLeftovers = rates.rateLeftovers;
+				}
+			}
+			if (statusCode === 200) {
 				content = htmlGzip ? await createBlob(htmlGzip) : undefined;
 
 				// Derive Markdown from the SAME rendered HTML so one render yields both
@@ -108,6 +134,8 @@ const pageSource = {
 				content,
 				markdownContent,
 				markdownLength,
+				hasRateTokens,
+				rateLeftovers,
 				lastRefreshed: Date.now(),
 			};
 		} else {
@@ -190,10 +218,20 @@ export default class PageCache extends databases.prerender.PageCache {
 			respHeaders.set('content-type', 'text/html; charset=utf-8');
 		}
 
+		// Rate pages are stored with tokens; never hand those out raw.
+		let data = this.content;
+		if (this.hasRateTokens) {
+			const filled = await fillGzipped(this.content, await getRateSheet());
+			if (!filled.ok) return rateMissingResponse(filled.missing);
+			data = filled.gzip;
+			respHeaders.set('content-encoding', 'gzip');
+			applyRateHeaders(respHeaders, filled);
+		}
+
 		return {
 			status: this.statusCode || 200,
 			data: {
-				data: this.content,
+				data,
 				contentType: 'text/html; charset=utf-8',
 			},
 			headers: respHeaders,

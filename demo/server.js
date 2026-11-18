@@ -395,10 +395,22 @@ const HTML = `<!DOCTYPE html>
 .wa-store{display:flex;align-items:center;gap:10px;flex:1;min-width:260px;
           background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:11px 14px}
 .wa-lock{font-size:14px;opacity:.55}
+.wa-verticals{display:inline-flex;gap:4px;margin:0 0 12px;padding:3px;border-radius:999px;background:#e8eef5}
+.wa-vertical{border:0;background:transparent;padding:5px 14px;border-radius:999px;font-size:12.5px;font-weight:700;color:#475569;cursor:pointer}
+.wa-vertical.is-active{background:#fff;color:#002F6C;box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .wa-store-url{font-family:ui-monospace,Menlo,monospace;font-size:14px;font-weight:600;color:#002F6C}
 .wa-store-tag{margin-left:auto;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
               color:#0284c7;background:#e0f2fe;padding:3px 9px;border-radius:999px;white-space:nowrap}
 .wa-store-hint{margin-top:10px;font-size:12.5px;line-height:1.5;color:#94a3b8}
+.wa-rate{margin-top:12px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px}
+.wa-rate-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#166534;margin-bottom:8px}
+.wa-rate-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.wa-rate-row label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:600;color:#475569}
+.wa-rate-input{width:110px;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.wa-rate-reset{font-size:12.5px;font-weight:600;color:#0284c7;text-decoration:none;padding-bottom:10px}
+.wa-rate-reset:hover{text-decoration:underline}
+.wa-rate-note{margin-top:8px;font-size:12.5px;line-height:1.5;color:#475569}
+.wa-rate-note.err{color:#b91c1c}
 .wa-custom-toggle{margin-top:10px;font-size:13px}
 .wa-custom-toggle a{color:#0284c7;text-decoration:none;font-weight:600}
 .wa-custom-toggle a:hover{text-decoration:underline}
@@ -460,6 +472,7 @@ const HTML = `<!DOCTYPE html>
 .wa-delta{font-size:13px;font-weight:800;padding:3px 10px;border-radius:999px;
           background:#dcfce7;color:#166534;white-space:nowrap}
 .wa-delta-note{font-size:12.5px;color:#64748b;font-weight:600}
+.wa-delta-say{flex-basis:100%;font-size:13.5px;line-height:1.5;color:#334155;font-weight:600}
 .wa-facts{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #eef2f6}
 .wa-fact{display:flex;flex-direction:column;gap:1px;min-width:0}
 .wa-fact .fk{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#b0bcc9}
@@ -730,7 +743,8 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
     <div class="wa-hero">
       <div class="wa-eyebrow">Content negotiation at the edge</div>
       <h2 class="wa-h2">Who&rsquo;s asking?</h2>
-      <p class="wa-lede">One product page. One URL. The edge inspects <em>who</em> is requesting it &mdash; and hands each visitor exactly what serves them best. Same origin, same cached render, no application changes.</p>
+      <div class="wa-verticals" id="wa-verticals" style="display:none"></div>
+      <p class="wa-lede">One <span id="wa-noun">product page</span>. One URL. The edge inspects <em>who</em> is requesting it &mdash; and hands each visitor exactly what serves them best. Same origin, same cached render, no application changes.</p>
       <div class="wa-urlrow">
         <div class="wa-store" title="The demo store — the CSR page prerendered into Harper">
           <span class="wa-lock">&#128274;</span>
@@ -740,6 +754,16 @@ footer{text-align:center;padding:32px;color:#c0c8d0;font-size:12px}
         <button class="run-btn" id="wa-run" type="button" onclick="runHero()">&#9654;&nbsp; Run live</button>
       </div>
       <div class="wa-store-hint">Prerendering renders each page into Harper first, so this view runs against the demo store &mdash; not arbitrary URLs. (Edge conversion of any URL is a different scenario.)</div>
+      <div class="wa-rate" id="wa-rate" style="display:none">
+        <div class="wa-rate-head">Change today&rsquo;s <span id="wa-rate-label">rate</span></div>
+        <div class="wa-rate-row">
+          <label>Rate %<input type="number" step="0.001" min="0" max="99" id="wa-rate-rate" class="wa-rate-input" onkeydown="if(event.key==='Enter')heroPublishRate()" /></label>
+          <label>APR %<input type="number" step="0.001" min="0" max="99" id="wa-rate-apr" class="wa-rate-input" onkeydown="if(event.key==='Enter')heroPublishRate()" /></label>
+          <button class="run-btn" id="wa-rate-run" type="button" onclick="heroPublishRate()">Publish rate</button>
+          <a href="#" class="wa-rate-reset" onclick="heroResetRate(event)">reset to sample rates</a>
+        </div>
+        <div class="wa-rate-note" id="wa-rate-note">One write to the rate table in Harper. The cached prerender is not cleared or re-rendered: Harper fills the rate into it on each request.</div>
+      </div>
       <div class="wa-custom-toggle" id="wa-custom-toggle" style="display:none"><a href="#" onclick="heroToggleCustom(event)">or prerender another page &rarr;</a></div>
       <div class="wa-custom" id="wa-custom" style="display:none">
         <div class="wa-custom-row">
@@ -902,30 +926,154 @@ var selectedFixture = null;
 var currentScenario = null;
 var scenarioFeatures = {};
 
+// ── Vertical switch — same pipeline, a different CSR origin page ─────────────
+// Paints the store URL chip, the lede noun and the vertical buttons from state.
+function renderVerticals() {
+  var su = document.getElementById('wa-store-url');
+  if (su && heroStoreUrl) {
+    var disp = heroStoreUrl.replace('https://', '').replace('http://', '');
+    if (disp.slice(-1) === '/') disp = disp.slice(0, -1);
+    su.textContent = disp;
+  }
+  var cur = heroVerticals.filter(function(v){ return v.id === heroVertical; })[0];
+  var noun = document.getElementById('wa-noun');
+  if (noun && cur) noun.textContent = cur.noun;
+  var wrap = document.getElementById('wa-verticals');
+  if (!wrap) return;
+  // One vertical (or none configured) needs no switch.
+  wrap.style.display = heroVerticals.length > 1 ? '' : 'none';
+  wrap.innerHTML = '';
+  heroVerticals.forEach(function(v) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'wa-vertical' + (v.id === heroVertical ? ' is-active' : '');
+    b.textContent = v.label;
+    b.onclick = function() { selectVertical(v.id); };
+    wrap.appendChild(b);
+  });
+}
+
+// Keep the Scenario Walkthrough's URL box on the active store unless the user
+// typed something of their own. onLoad also replaces the stock placeholder value.
+function syncTargetUrl(onLoad) {
+  var tu = document.getElementById('target-url');
+  if (!tu || !heroStoreUrl) return;
+  var v = tu.value || '';
+  var isStore = heroVerticals.some(function(x){ return x.storeUrl === v; });
+  var isDefault = !v || v === heroStoreUrl || isStore || (onLoad && v.indexOf('akamai.com') !== -1);
+  if (isDefault) { tu.value = heroStoreUrl; tu.placeholder = heroStoreUrl; }
+}
+
+function selectVertical(id) {
+  var v = heroVerticals.filter(function(x){ return x.id === id; })[0];
+  if (!v || v.id === heroVertical) return;
+  heroVertical = v.id;
+  heroStoreUrl = v.storeUrl;
+  try { localStorage.setItem('eeo-vertical', v.id); } catch (e) {}
+  syncTargetUrl(false);
+  renderVerticals();
+  // Results on screen belong to the previous vertical: rerun if the hero has run
+  // (also leaves "prerender another page" mode), otherwise just repaint.
+  if (heroRan) heroBackToStore(null);
+  renderRateControl(true);
+}
+
+// ── Rate control (finance vertical) — change the rate by serve-time injection ─
+// Shown only for a vertical that declares "rate" in scenarios.config.json, and
+// only when the server has Harper credentials to write the rate table.
+function heroRateCfg() {
+  var cur = heroVerticals.filter(function(v){ return v.id === heroVertical; })[0];
+  return cur && cur.rate ? cur.rate : null;
+}
+function heroRateNote(msg, isErr) {
+  var n = document.getElementById('wa-rate-note');
+  if (!n) return;
+  n.className = 'wa-rate-note' + (isErr ? ' err' : '');
+  n.textContent = msg;
+}
+function heroRateFill(sheet, cfg) {
+  var p = ((sheet && sheet.products) || []).filter(function(x){ return x.key === cfg.product; })[0];
+  if (!p) return;
+  var r = document.getElementById('wa-rate-rate'), a = document.getElementById('wa-rate-apr');
+  if (r) r.value = Number(p.rate).toFixed(3);
+  if (a) a.value = Number(p.apr).toFixed(3);
+}
+// Paint the control; with load=true also read the current rates from Harper.
+function renderRateControl(load) {
+  var box = document.getElementById('wa-rate');
+  if (!box) return;
+  var cfg = heroRateCfg();
+  var show = !!cfg && heroHarperReady && heroMode === 'store';
+  box.style.display = show ? '' : 'none';
+  if (!show) return;
+  var lab = document.getElementById('wa-rate-label');
+  if (lab) lab.textContent = (cfg.label || 'featured') + ' rate';
+  if (!load) return;
+  fetch('/rate').then(function(r){ return r.json(); }).then(function(d){
+    if (d.error) { heroRateNote('Could not read the rate table: ' + d.error, true); return; }
+    heroRateFill(d.sheet, cfg);
+  }).catch(function(e){ heroRateNote('Could not read the rate table: ' + e.message, true); });
+}
+// Refetch the lanes on screen WITHOUT resetting the lane or the before/after
+// phase, so a published rate shows up where the presenter is already looking.
+function heroRefetchInPlace() {
+  if (!heroRan || heroMode !== 'store') return;
+  heroCache = {}; heroBusy = {};
+  heroFetch(heroPairKeys(heroPick.search)
+    .concat(heroPairKeys(heroPick.ai))
+    .concat(['human|after']));
+}
+function heroSendRate(payload, doneMsg) {
+  var cfg = heroRateCfg();
+  if (!cfg) return;
+  var btn = document.getElementById('wa-rate-run');
+  if (btn) btn.disabled = true;
+  heroRateNote('Writing the rate table...', false);
+  fetch('/rate-set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (btn) btn.disabled = false;
+      if (d.error) { heroRateNote('Not published: ' + d.error, true); return; }
+      heroRateFill(d.sheet, cfg);
+      heroRateNote(doneMsg + ' The write took ' + d.writeMs + ' ms. Nothing was re-rendered: every bot request from now on is filled with this rate.'
+        + (heroRan ? ' Refreshing the lanes below.' : ' Press Run live to see it.'), false);
+      heroRefetchInPlace();
+    })
+    .catch(function(e){ if (btn) btn.disabled = false; heroRateNote('Not published: ' + e.message, true); });
+}
+function heroPublishRate() {
+  var cfg = heroRateCfg();
+  if (!cfg) return;
+  var r = parseFloat(document.getElementById('wa-rate-rate').value);
+  var a = parseFloat(document.getElementById('wa-rate-apr').value);
+  if (!isFinite(r) || !isFinite(a) || r <= 0 || a <= 0 || r >= 100 || a >= 100) { heroRateNote('Enter a rate and an APR between 0 and 100.', true); return; }
+  heroSendRate({ product: cfg.product, rate: r, apr: a }, 'Published ' + r.toFixed(3) + '% (' + a.toFixed(3) + '% APR).');
+}
+function heroResetRate(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  heroSendRate({ reset: true }, 'Reset to the sample rates.');
+}
+
 // ── Scenario selector (Phase A) — switch which backend the demo targets ──────
 function loadScenarios() {
   fetch('/scenarios').then(function(r){ return r.json(); }).then(function(d){
-    heroStoreUrl = d.storeUrl || heroStoreUrl;
-    var su = document.getElementById('wa-store-url');
-    if (su && heroStoreUrl) {
-      var disp = heroStoreUrl.replace('https://', '').replace('http://', '');
-      if (disp.slice(-1) === '/') disp = disp.slice(0, -1);
-      su.textContent = disp;
-    }
+    heroVerticals = d.verticals || [];
+    var savedV = null;
+    try { savedV = localStorage.getItem('eeo-vertical'); } catch (e) {}
+    var startV = heroVerticals.filter(function(v){ return v.id === savedV; })[0] || heroVerticals[0];
+    if (startV) { heroVertical = startV.id; heroStoreUrl = startV.storeUrl; }
+    else heroStoreUrl = d.storeUrl || heroStoreUrl;
+    renderVerticals();
     // Offer the "prerender another page" affordance only when the server has the
     // Harper seed credentials to actually render on demand.
     heroHarperReady = !!d.harperReady;
     var ct = document.getElementById('wa-custom-toggle');
     if (ct) ct.style.display = heroHarperReady ? '' : 'none';
+    renderRateControl(true);
     // Default the Scenario Walkthrough to the prerendered store, so the out-of-box
     // run hits the cache (Scenario C shows real rows) instead of seeding a heavy
     // arbitrary URL. Stays editable — any other URL triggers seed-on-demand.
-    var tu = document.getElementById('target-url');
-    if (tu && heroStoreUrl) {
-      var v = tu.value || '';
-      var isDefault = !v || v.indexOf('akamai.com') !== -1 || v === heroStoreUrl;
-      if (isDefault) { tu.value = heroStoreUrl; tu.placeholder = heroStoreUrl; }
-    }
+    syncTargetUrl(true);
     var wrap = document.getElementById('scenario-buttons');
     if (!wrap) return;
     wrap.innerHTML = '';
@@ -1045,6 +1193,8 @@ var heroCache = {};   // results keyed by kind ('human','googlebot',…) in stor
 var heroBusy = {};    // key -> true while its fetch is in flight
 var heroUrl = '';
 var heroStoreUrl = '';   // the demo store — always prerendered into Harper
+var heroVerticals = [];  // [{id,label,noun,storeUrl}] from /scenarios; empty = single store
+var heroVertical = '';   // active vertical id
 var heroRan = false;
 // 'store' = the locked demo store, fetched live through the Akamai edge (the real
 // production path). 'custom' = any URL the user prerenders on demand; its lanes are
@@ -1169,7 +1319,7 @@ function heroDelta(before, after, lane) {
     if (pct <= 0) return '';
     return '<span class="wa-delta good">&minus;' + pct + '% tokens</span>' +
            '<span class="wa-delta-note">' + bt.toLocaleString() + ' &rarr; ' + at.toLocaleString() +
-           ' tokens for a page the model can actually read</span>';
+           ' tokens for a page the model can actually read</span>' + heroAiSay(bt, at, fb, fa);
   }
   if (lane === 'search') {
     if (!fb || !fa) return '';
@@ -1182,6 +1332,22 @@ function heroDelta(before, after, lane) {
            '<span class="wa-delta-note">' + bits.join(' &middot; ') + '</span>';
   }
   return '';
+}
+
+// The plain-language reading of the AI lane's token delta. The percentage alone
+// invites the wrong comparison: "today" is an empty shell, so the point is not
+// fewer tokens but that the model goes from learning nothing to getting the page.
+// The wording comes from the vertical's "ai" entry in scenarios.config.json
+// ({ missing, gained }); without one, or in custom-URL mode, nothing is added.
+// Shown only when today's response really is near-empty next to the served one.
+function heroAiSay(bt, at, fb, fa) {
+  if (heroMode !== 'store') return '';
+  var cur = heroVerticals.filter(function(v){ return v.id === heroVertical; })[0];
+  if (!cur || !cur.ai || !cur.ai.missing || !cur.ai.gained) return '';
+  if (!fb || !fa || fb.jsonLd || fb.words * 3 > fa.words) return '';
+  var about = function(n) { return (Math.round(n / 100) * 100).toLocaleString(); };
+  return '<div class="wa-delta-say">Today the model spends about ' + about(bt) + ' tokens and gets nothing: ' + esc(cur.ai.missing) +
+         '. With Akamai it spends about ' + about(at) + ' and gets the whole page, including ' + esc(cur.ai.gained) + '.</div>';
 }
 
 function heroActiveKind() { return heroSel === 'human' ? 'human' : heroPick[heroSel]; }
@@ -1269,10 +1435,11 @@ function heroToggleCustom(e) {
 function heroBackToStore(e) {
   if (e && e.preventDefault) e.preventDefault();
   var c = document.getElementById('wa-custom'); if (c) c.style.display = 'none';
-  var t = document.getElementById('wa-custom-toggle'); if (t) t.style.display = '';
+  var t = document.getElementById('wa-custom-toggle'); if (t) t.style.display = heroHarperReady ? '' : 'none';
   var b = document.getElementById('wa-custom-back'); if (b) b.style.display = 'none';
   heroSetSeg('search');   // back to the store = back to the lead lane
   runHero();              // resets heroPhase to 'before'
+  renderRateControl(false);   // the rate control belongs to the store view
 }
 
 function heroRunCustomFromInput() {
@@ -1310,6 +1477,7 @@ function heroBeforeAfterSummary() {
 // Seed a URL, show the "before" instantly, then poll until the render lands.
 function heroRunCustom(url) {
   heroMode = 'custom';
+  renderRateControl(false);   // hidden while a custom page is on screen
   heroRan = true;
   heroCustomUrl = url;
   heroUrl = url;
@@ -2218,6 +2386,73 @@ function harperCacheClear({ all, url }) {
     });
 }
 
+// ── Rate table (finance vertical): serve-time injection ─────────────────────
+// The finance prerender is cached with rate tokens; Harper fills them from one
+// row, /rate_sheet/national, on every request. Changing the rate is one PUT.
+const RATE_SHEET_PATH = '/rate_sheet/national';
+const RATE_BASELINE_FILE = path.join(__dirname, '..', 'origin-finance', 'rates.json');
+
+function harperJson(method, pathname, { auth = false, body = null } = {}) {
+    return new Promise((resolve, reject) => {
+        const u = new URL(HARPER_PREVIEW_URL.replace(/\/$/, '') + pathname);
+        const lib = u.protocol === 'https:' ? https : http;
+        const payload = body == null ? null : JSON.stringify(body);
+        const headers = {};
+        if (payload) { headers['Content-Type'] = 'application/json'; headers['Content-Length'] = Buffer.byteLength(payload); }
+        if (auth) headers['Authorization'] = 'Basic ' + Buffer.from(HARPER_ADMIN_USER + ':' + HARPER_ADMIN_PASS).toString('base64');
+        const req = lib.request({
+            hostname: u.hostname,
+            port: u.port || (u.protocol === 'https:' ? 443 : 80),
+            path: u.pathname + u.search,
+            method, headers,
+            agent: u.protocol === 'https:' ? permissiveSslAgent : undefined,
+        }, (r) => {
+            let d = '';
+            r.on('data', (c) => { d += c; });
+            r.on('end', () => {
+                if (r.statusCode < 200 || r.statusCode >= 300) return reject(new Error('Harper ' + method + ' ' + pathname + ' returned ' + r.statusCode));
+                if (!d) return resolve(null);
+                try { resolve(JSON.parse(d)); } catch { reject(new Error('Harper returned non-JSON: ' + d.slice(0, 200))); }
+            });
+        });
+        req.on('error', reject);
+        req.setTimeout(15000, () => req.destroy(new Error('Harper ' + pathname + ' timed out')));
+        if (payload) req.write(payload);
+        req.end();
+    });
+}
+
+// Reject anything the serve path would refuse: a bad sheet makes Harper answer
+// 503 to every bot request for the rate page.
+function validRateSheet(sheet) {
+    if (!sheet || typeof sheet.asOf !== 'string' || Number.isNaN(Date.parse(sheet.asOf))) return false;
+    if (!Array.isArray(sheet.products) || !sheet.products.length) return false;
+    return sheet.products.every(p => p && typeof p.key === 'string' && p.key &&
+        ['rate', 'apr', 'points'].every(f => typeof p[f] === 'number' && Number.isFinite(p[f])));
+}
+
+async function setRate({ product, rate, apr, reset }) {
+    let sheet;
+    if (reset) {
+        const base = JSON.parse(fs.readFileSync(RATE_BASELINE_FILE, 'utf8'));
+        sheet = { id: 'national', asOf: base.asOf, products: base.products.map(p => ({ key: p.key, rate: p.rate, apr: p.apr, points: p.points })) };
+    } else {
+        const ok = (n) => typeof n === 'number' && Number.isFinite(n) && n > 0 && n < 100;
+        if (!ok(rate) || !ok(apr)) throw new Error('rate and apr must be numbers between 0 and 100');
+        const cur = await harperJson('GET', RATE_SHEET_PATH);
+        if (!cur || !Array.isArray(cur.products)) throw new Error('the rate table is empty; use reset first');
+        sheet = { id: 'national', asOf: new Date().toISOString(), products: cur.products.map(p => ({ ...p })) };
+        const p = sheet.products.find(x => x.key === product);
+        if (!p) throw new Error('no product "' + product + '" in the rate table');
+        p.rate = rate; p.apr = apr;
+    }
+    if (!validRateSheet(sheet)) throw new Error('refusing to write an invalid rate sheet');
+    const t0 = process.hrtime.bigint();
+    await harperJson('PUT', RATE_SHEET_PATH, { auth: true, body: sheet });
+    const writeMs = Math.round(Number(process.hrtime.bigint() - t0) / 1e5) / 10;
+    return { sheet, writeMs };
+}
+
 // Plain origin fetch — the "before" (un-rendered) baseline for the comparison.
 function fetchRaw(targetUrl) {
     return new Promise((resolve) => {
@@ -2521,6 +2756,27 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    if (req.method === 'GET' && req.url === '/rate') {
+        harperJson('GET', RATE_SHEET_PATH)
+            .then(sheet => sendJSON(res, 200, { sheet }))
+            .catch(err => sendJSON(res, 502, { error: err.message }));
+        return;
+    }
+
+    if (req.method === 'POST' && req.url === '/rate-set') {
+        let body = '';
+        req.on('data', (chunk) => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                if (!HARPER_READY) return sendJSON(res, 400, { error: 'Harper credentials not configured (set HARPER_PREVIEW_URL / HARPER_ADMIN_USER / HARPER_ADMIN_PASS / HARPER_BOT_KEY in env/demo.env)' });
+                sendJSON(res, 200, await setRate(JSON.parse(body || '{}')));
+            } catch (err) {
+                sendJSON(res, 400, { error: err.message });
+            }
+        });
+        return;
+    }
+
     if (req.method === 'POST' && req.url === '/cache-clear') {
         let body = '';
         req.on('data', (chunk) => { body += chunk.toString(); });
@@ -2593,9 +2849,22 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && req.url === '/scenarios') {
         const hero = resolveScenario('prerender');
+        // Verticals: the same property and pipeline, pointed at a different CSR
+        // origin page (commerce product page, finance rate page, ...). Each is a
+        // path on the hero host. With none configured, the single store at "/"
+        // behaves exactly as before.
+        const verticals = (Array.isArray(SCENARIO_CFG.verticals) ? SCENARIO_CFG.verticals : [])
+            .filter(v => v && v.id && typeof v.path === 'string' && v.path.startsWith('/'))
+            .map(v => ({ id: String(v.id), label: String(v.label || v.id), noun: String(v.noun || 'page'),
+                         storeUrl: 'https://' + hero.host + v.path,
+                         // Optional: { product, label } turns on the rate-change control.
+                         rate: v.rate && v.rate.product ? { product: String(v.rate.product), label: String(v.rate.label || '') } : null,
+                         // Optional: { missing, gained } words the AI lane's plain-language token line.
+                         ai: v.ai && v.ai.missing && v.ai.gained ? { missing: String(v.ai.missing), gained: String(v.ai.gained) } : null }));
         return sendJSON(res, 200, {
             default: DEFAULT_SCENARIO,
-            storeUrl: 'https://' + hero.host + '/',
+            storeUrl: verticals.length ? verticals[0].storeUrl : 'https://' + hero.host + '/',
+            verticals,
             harperReady: HARPER_READY,   // gates the "prerender another page" affordance
             scenarios: SCENARIOS.map(s => ({
                 id: s.id, label: s.label, blurb: s.blurb, source: s.source, features: s.features || {},

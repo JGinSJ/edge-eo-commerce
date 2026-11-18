@@ -1,0 +1,63 @@
+{
+  "_note": "Sample data for a fictional bank. Not real market rates.",
+  "asOf": "2026-11-17T09:00:00-05:00",
+  "featured": "mortgage-30-fixed",
+  "assumptions": "Rates assume a $400,000 purchase loan, 20% down payment, a 740 credit score, and a single-family primary residence. Your rate may differ.",
+  "products": [
+    {
+      "key": "mortgage-30-fixed",
+      "name": "30-Year Fixed",
+      "term": "30 years",
+      "rate": 6.625,
+      "apr": 6.742,
+      "points": 0.5,
+      "blurb": "A fixed rate and a predictable principal and interest payment for the life of the loan."
+    },
+    {
+      "key": "mortgage-15-fixed",
+      "name": "15-Year Fixed",
+      "term": "15 years",
+      "rate": 5.875,
+      "apr": 6.051,
+      "points": 0.5,
+      "blurb": "A shorter term with a lower rate; you build equity faster and pay less interest overall."
+    },
+    {
+      "key": "mortgage-7-6-arm",
+      "name": "7/6 ARM",
+      "term": "30 years",
+      "rate": 6.125,
+      "apr": 6.884,
+      "points": 0.25,
+      "blurb": "Fixed for the first seven years, then adjusts every six months based on the index."
+    }
+  ],
+  "page": {
+    "headline": "30-Year Fixed Mortgage Rates",
+    "lede": "Lock a fixed rate on a 30-year home loan. See today's rate and APR, compare it with our other mortgage options, and start an application online in minutes.",
+    "highlights": [
+      "Rate locks up to 60 days at no charge",
+      "Down payments as low as 3% for qualified first-time buyers",
+      "Online application with a decision in as little as one business day",
+      "No prepayment penalty"
+    ],
+    "faq": [
+      {
+        "q": "What is the difference between interest rate and APR?",
+        "a": "The interest rate is the cost of borrowing the principal. The annual percentage rate (APR) also includes points and certain lender fees, so it reflects the total yearly cost of the loan and is usually higher than the rate."
+      },
+      {
+        "q": "How often do mortgage rates change?",
+        "a": "Larkspur Bank mortgage rates can change daily, and occasionally more than once in a day when markets move. The rate shown on this page is the rate in effect at the time shown above the rate table."
+      },
+      {
+        "q": "What are discount points?",
+        "a": "Points are an optional upfront fee paid at closing in exchange for a lower rate. One point equals 1% of the loan amount."
+      },
+      {
+        "q": "How do I lock my rate?",
+        "a": "You can lock your rate once your application is submitted and a property is identified. A lock holds the rate for a set period, typically 30 to 60 days, while the loan is processed."
+      }
+    ]
+  }
+}

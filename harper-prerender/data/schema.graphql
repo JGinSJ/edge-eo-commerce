@@ -71,6 +71,14 @@ type PageCache @table(database: "prerender") @sealed @export {
 	# Uncompressed length (bytes) of the derived Markdown, for observability
 	markdownLength: Int
 
+	# True when content/markdownContent hold rate tokens (%%RATE:…%%) instead of
+	# values. Such a record MUST be filled from RateSheet before it is served.
+	hasRateTokens: Boolean
+
+	# Current rate values found outside any slot or template when the page was
+	# stored: rates that will stay frozen at their render-time value. Want 0.
+	rateLeftovers: Int
+
 	# Device type for this page (mobile, desktop, tablet)
 	deviceType: String
 
@@ -79,6 +87,18 @@ type PageCache @table(database: "prerender") @sealed @export {
 
 	# Time of the last refresh in epoch milliseconds
 	lastRefreshed: Long
+}
+
+# Current rates for serve-time injection. One row, id "national". Exported as
+# /rate_sheet by src/resources/RateSheet.js (public read).
+type RateSheet @table(database: "prerender") @sealed {
+	id: String @primaryKey
+
+	# When these rates took effect (ISO 8601 timestamp)
+	asOf: String
+
+	# [{ key, rate, apr, points }, …]; rate and apr are numbers, in percent
+	products: Any
 }
 
 # Assignment of nodes to worker IDs for load balancing

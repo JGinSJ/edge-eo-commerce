@@ -21,7 +21,7 @@
   "scripts": {
     "dev": "harperdb dev .",
     "start": "harperdb run .",
-    "test": "node --test src/util/markdown.test.js"
+    "test": "node --test src/util/*.test.js"
   },
   "dependencies": {
     "@crawlee/utils": "^3.13.2",
